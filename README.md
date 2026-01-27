@@ -26,11 +26,11 @@ Traditional tools for the blind often provide disconnected labels (e.g., "chair,
 ## 📂 Project Structure (Planned)
 
 lib/
-├── main.dart           # App entry point
-├── ui/                 # Accessible Quadrant Interface
-├── services/           # ML Kit & Gemini API wrappers
-├── models/             # Data structures for vision results
-└── utils/              # Color mapping and audio constants
+- main.dart           # App entry point
+- ui/                 # Accessible Quadrant Interface
+- services/           # ML Kit & Gemini API wrappers
+- models/             # Data structures for vision results
+- utils/              # Color mapping and audio constants
 
 ## 🚦 Getting Started
 
