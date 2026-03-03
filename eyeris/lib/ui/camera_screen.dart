@@ -20,25 +20,33 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
-  String _aiGeneratedText = 'Loading...'; // Updated default text
 
-  final options = ObjectDetectorOptions(
+  /// Latest AI narration of the environment (Prompt A style).
+  String _aiGeneratedText = 'Point your camera and tap the button to scan.';
+
+  /// Latest set of labels detected by ML Kit from the live camera stream.
+  List<String> _lastDetectedLabels = <String>[];
+
+  /// Prevents overlapping ML Kit detection calls on the image stream.
+  bool _isDetecting = false;
+
+  final ObjectDetectorOptions _options = ObjectDetectorOptions(
     mode: DetectionMode.stream,
     classifyObjects: true,
     multipleObjects: true,
   );
 
-  late final ObjectDetector _objectDetector = ObjectDetector(options: options);
+  late final ObjectDetector _objectDetector = ObjectDetector(options: _options);
   final OpenAIService _openAIService = OpenAIService();
 
   @override
   void initState() {
     super.initState();
-    requestPermissions(); // Request permissions at app startup
+    _requestPermissions();
     _initializeCamera();
   }
 
-  Future<void> requestPermissions() async {
+  Future<void> _requestPermissions() async {
     final status = await Permission.camera.request();
     debugPrint('Camera permission status: $status');
     if (status.isDenied || status.isPermanentlyDenied) {
@@ -67,24 +75,25 @@ class _CameraScreenState extends State<CameraScreen> {
         _isCameraInitialized = true;
       });
 
-      // Start live detection stream
+      // Start live detection stream: we only update labels here,
+      // and trigger AI narration on demand (scan button).
       _cameraController!.startImageStream(_processCameraImage);
     } catch (e) {
       debugPrint('Camera initialization error: $e');
     }
   }
 
-  Future<void> _generateAIText(List<String> labels) async {
-    final generatedText = await _openAIService.generateAIText(labels);
-    setState(() {
-      _aiGeneratedText = generatedText;
-    });
-  }
-
   Future<void> _processCameraImage(CameraImage image) async {
-    final inputImage = _inputImageFromCameraImage(image, _cameraController!.description, _cameraController!);
+    if (_cameraController == null || _isDetecting) return;
+
+    final inputImage = _inputImageFromCameraImage(
+      image,
+      _cameraController!.description,
+      _cameraController!,
+    );
     if (inputImage == null) return;
 
+    _isDetecting = true;
     try {
       final detectedObjects = await _objectDetector.processImage(inputImage);
 
@@ -92,23 +101,36 @@ class _CameraScreenState extends State<CameraScreen> {
         final labels = detectedObjects
             .expand((obj) => obj.labels)
             .map((label) => label.text)
+            .where((text) => text.isNotEmpty)
+            .toSet()
             .toList();
 
-        await _generateAIText(labels); // Generate descriptive text
+        if (labels.isNotEmpty && mounted) {
+          debugPrint('ML Kit detected: $labels');
+          setState(() {
+            _lastDetectedLabels = labels;
+          });
+        }
       }
     } catch (e) {
       debugPrint('Detection error: $e');
+    } finally {
+      _isDetecting = false;
     }
   }
 
-  final _orientations = {
+  final Map<DeviceOrientation, int> _orientations = <DeviceOrientation, int>{
     DeviceOrientation.portraitUp: 0,
     DeviceOrientation.landscapeLeft: 90,
     DeviceOrientation.portraitDown: 180,
     DeviceOrientation.landscapeRight: 270,
   };
 
-  InputImage? _inputImageFromCameraImage(CameraImage image, CameraDescription camera, CameraController controller) {
+  InputImage? _inputImageFromCameraImage(
+    CameraImage image,
+    CameraDescription camera,
+    CameraController controller,
+  ) {
     // Get image rotation
     final sensorOrientation = camera.sensorOrientation;
     InputImageRotation? rotation;
@@ -116,15 +138,18 @@ class _CameraScreenState extends State<CameraScreen> {
     if (Platform.isIOS) {
       rotation = InputImageRotationValue.fromRawValue(sensorOrientation);
     } else if (Platform.isAndroid) {
-      var rotationCompensation = _orientations[controller.value.deviceOrientation];
+      var rotationCompensation =
+          _orientations[controller.value.deviceOrientation];
       if (rotationCompensation == null) return null;
 
       if (camera.lensDirection == CameraLensDirection.front) {
         // Front-facing
-        rotationCompensation = (sensorOrientation + rotationCompensation) % 360;
+        rotationCompensation =
+            (sensorOrientation + rotationCompensation) % 360;
       } else {
         // Back-facing
-        rotationCompensation = (sensorOrientation - rotationCompensation + 360) % 360;
+        rotationCompensation =
+            (sensorOrientation - rotationCompensation + 360) % 360;
       }
       rotation = InputImageRotationValue.fromRawValue(rotationCompensation);
     }
@@ -157,6 +182,31 @@ class _CameraScreenState extends State<CameraScreen> {
     );
   }
 
+  Future<void> _runSceneNarration() async {
+    // Use Prompt A rules to describe the current environment
+    // based on the latest detected labels.
+    if (_lastDetectedLabels.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _aiGeneratedText = 'Nothing notable in front of you right now.';
+      });
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _aiGeneratedText = 'Analyzing the scene...';
+    });
+
+    final description =
+        await _openAIService.generateAIText(_lastDetectedLabels);
+
+    if (!mounted) return;
+    setState(() {
+      _aiGeneratedText = description;
+    });
+  }
+
   @override
   void dispose() {
     _cameraController?.dispose();
@@ -174,29 +224,51 @@ class _CameraScreenState extends State<CameraScreen> {
 
     return Scaffold(
       body: Stack(
-        children: [
+        fit: StackFit.expand,
+        children: <Widget>[
           CameraPreview(_cameraController!),
           Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.black.withOpacity(0.5),
-              child: Text(
-                _aiGeneratedText,
-                style: const TextStyle(color: Colors.white, fontSize: 18),
-                textAlign: TextAlign.center,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      // Keep the narration box compact so it
+                      // doesn't block too much of the camera view.
+                      maxHeight: 120,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Text(
+                        _aiGeneratedText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          debugPrint('Scan pressed - implement TTS or capture here');
-        },
-        child: const Icon(Icons.camera),
+        onPressed: _runSceneNarration,
+        child: const Icon(Icons.search),
       ),
     );
   }
