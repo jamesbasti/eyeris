@@ -29,6 +29,8 @@ Rules:
 - Keep the response short (1–2 sentences), easy to understand when spoken.
 - If nothing important is detected, say something reassuring like "Nothing notable in front of you right now."
 - Never mention technical terms like "ML Kit" or "object detection".
+- Do NOT ask the user to request more details, more help, or navigation help.
+- Never use phrases like "let me know if you need more details" or "let me know if you want help".
 
 Generate a spoken description right now.
 ''';

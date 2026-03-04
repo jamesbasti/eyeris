@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For DeviceOrientation
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../services/openai_service.dart';
 
 class CameraScreen extends StatefulWidget {
@@ -38,12 +39,20 @@ class _CameraScreenState extends State<CameraScreen> {
 
   late final ObjectDetector _objectDetector = ObjectDetector(options: _options);
   final OpenAIService _openAIService = OpenAIService();
+  final FlutterTts _flutterTts = FlutterTts();
 
   @override
   void initState() {
     super.initState();
+    _initTts();
     _requestPermissions();
     _initializeCamera();
+  }
+
+  Future<void> _initTts() async {
+    await _flutterTts.setLanguage('en-US');
+    await _flutterTts.setSpeechRate(0.45);
+    await _flutterTts.setPitch(1.0);
   }
 
   Future<void> _requestPermissions() async {
@@ -205,12 +214,19 @@ class _CameraScreenState extends State<CameraScreen> {
     setState(() {
       _aiGeneratedText = description;
     });
+
+    // Speak the generated description aloud for the user.
+    if (description.isNotEmpty) {
+      await _flutterTts.stop();
+      await _flutterTts.speak(description);
+    }
   }
 
   @override
   void dispose() {
     _cameraController?.dispose();
     _objectDetector.close();
+    _flutterTts.stop();
     super.dispose();
   }
 
@@ -222,53 +238,62 @@ class _CameraScreenState extends State<CameraScreen> {
       );
     }
 
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          CameraPreview(_cameraController!),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      // Keep the narration box compact so it
-                      // doesn't block too much of the camera view.
-                      maxHeight: 120,
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        // Negative velocity = swipe left (right-to-left gesture).
+        if (velocity < -300 && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            CameraPreview(_cameraController!),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                    child: SingleChildScrollView(
-                      child: Text(
-                        _aiGeneratedText,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        // Keep the narration box compact so it
+                        // doesn't block too much of the camera view.
+                        maxHeight: 120,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Text(
+                          _aiGeneratedText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _runSceneNarration,
-        child: const Icon(Icons.search),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _runSceneNarration,
+          child: const Icon(Icons.search),
+        ),
       ),
     );
   }
