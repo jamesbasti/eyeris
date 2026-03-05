@@ -6,7 +6,7 @@ import 'ui/splash_screen.dart';  // ← update path if you used different folder
 
 Future<void> main() async {
   await dotenv.load(); // Load environment variables from .env file
-  print('API Key: ${dotenv.env['OPENAI_API_KEY']}');
+  debugPrint('API Key: ${dotenv.env['OPENAI_API_KEY']}');
   runApp(const EyerisApp());
 }
 

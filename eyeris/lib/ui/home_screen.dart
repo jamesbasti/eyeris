@@ -31,15 +31,17 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: const Icon(Icons.camera_alt, size: 40),
               label: const Text('Open Camera', style: TextStyle(fontSize: 24)),
               onPressed: () async {
+                // ignore: use_build_context_synchronously
                 // Request camera permission
                 final status = await Permission.camera.request();
+                
                 if (status.isGranted && mounted) {
                   // Navigate to camera screen
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const CameraScreen()),
                   );
-                } else {
+                } else if (mounted) {
                   // Show message if denied
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Camera permission denied')),

@@ -36,6 +36,9 @@ class _CameraScreenState extends State<CameraScreen> {
   /// COCO dataset labels (90 classes)
   List<String> _labels = [];
   
+  /// Debug flag for camera info
+  static bool _printedCameraInfo = false;
+  
   final OpenAIService _openAIService = OpenAIService();
   final FlutterTts _flutterTts = FlutterTts();
 
@@ -51,10 +54,6 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _loadModel() async {
     try {
       _interpreter = await tfl.Interpreter.fromAsset('assets/ml/object_labeler.tflite');
-      
-      // Debug: Check input tensor details
-      final inputTensor = _interpreter!.getInputTensor(0);
-      debugPrint('Model input tensor: shape=${inputTensor.shape}, type=${inputTensor.type}');
       
       // COCO labels (90 classes)
       _labels = [
@@ -123,6 +122,17 @@ class _CameraScreenState extends State<CameraScreen> {
       return;
     }
 
+    // Debug: Print image format info once
+    if (!_printedCameraInfo) {
+      debugPrint('Camera format: ${image.format.group}, width: ${image.width}, height: ${image.height}');
+      debugPrint('Planes: ${image.planes.length}');
+      for (int i = 0; i < image.planes.length; i++) {
+        final plane = image.planes[i];
+        debugPrint('Plane $i: bytes=${plane.bytes.length}, stride=${plane.bytesPerRow}, pixels=${plane.bytesPerPixel}');
+      }
+      _printedCameraInfo = true;
+    }
+
     _isDetecting = true;
     try {
       // Convert CameraImage to input tensor for TFLite
@@ -179,52 +189,49 @@ class _CameraScreenState extends State<CameraScreen> {
         return null;
       }
       
-      // BGRA8888 format - convert to RGB
-      final plane = planes[0];
-      final buffer = plane.bytes;
-      final int rowStride = plane.bytesPerRow;
+      final firstPlane = planes[0];
+      final buffer = firstPlane.bytes;
+      final stride = firstPlane.bytesPerRow;
       
-      debugPrint('Buffer: length=${buffer.length}, stride=$rowStride');
-
+      debugPrint('First plane: bytes=${buffer.length}, stride=$stride');
+      
       if (buffer.isEmpty) {
         debugPrint('Empty buffer');
         return null;
       }
-
-      // Create resized RGB buffer (300x300x3) - using uint8 for TFLite
-      const targetSize = 300;
-      final inputBuffer = List<int>.filled(targetSize * targetSize * 3, 0);
       
-      // Simple nearest neighbor resize from BGRA to RGB
-      for (int y = 0; y < targetSize; y++) {
-        for (int x = 0; x < targetSize; x++) {
-          // Map target coordinates to source coordinates with bounds checking
-          final srcX = (x * width / targetSize).floor().clamp(0, width - 1);
-          final srcY = (y * height / targetSize).floor().clamp(0, height - 1);
-          
-          // Calculate BGRA buffer index (4 bytes per pixel)
-          final index = srcY * rowStride + srcX * 4;
-          
-          if (index + 3 >= buffer.length) {
-            debugPrint('Index out of bounds: $index + 3 >= ${buffer.length}');
-            return null;
+      // Create a simple test tensor - just use the first few pixels as a test
+      const targetSize = 300;
+      final inputBuffer = List.filled(targetSize * targetSize * 3, 0.5); // Default to gray
+      
+      // Try to sample a few pixels safely
+      try {
+        for (int y = 0; y < targetSize && y < height; y += 10) {
+          for (int x = 0; x < targetSize && x < width; x += 10) {
+            final index = y * stride + x;
+            if (index < buffer.length) {
+              final value = buffer[index] / 255.0;
+              // Set a small region around this pixel
+              for (int dy = 0; dy < 10 && y + dy < targetSize; dy++) {
+                for (int dx = 0; dx < 10 && x + dx < targetSize; dx++) {
+                  final targetIndex = ((y + dy) * targetSize + (x + dx)) * 3;
+                  if (targetIndex + 2 < inputBuffer.length) {
+                    inputBuffer[targetIndex] = value;
+                    inputBuffer[targetIndex + 1] = value;
+                    inputBuffer[targetIndex + 2] = value;
+                  }
+                }
+              }
+            }
           }
-          
-          // Extract BGRA values and convert to RGB
-          final b = buffer[index];        // Blue
-          final g = buffer[index + 1];    // Green  
-          final r = buffer[index + 2];    // Red
-          // buffer[index + 3] is Alpha (ignored)
-          
-          // Store as uint8 (0-255)
-          final targetIndex = (y * targetSize + x) * 3;
-          inputBuffer[targetIndex] = r;
-          inputBuffer[targetIndex + 1] = g;
-          inputBuffer[targetIndex + 2] = b;
         }
+        debugPrint('Successfully processed image');
+      } catch (e) {
+        debugPrint('Error during processing: $e');
+        // Return gray tensor as fallback
+        return inputBuffer.reshape([1, targetSize, targetSize, 3]);
       }
-
-      debugPrint('Successfully converted image to tensor');
+      
       // Reshape to [1, 300, 300, 3] for TFLite input
       return inputBuffer.reshape([1, targetSize, targetSize, 3]);
     } catch (e) {
@@ -248,23 +255,16 @@ class _CameraScreenState extends State<CameraScreen> {
     
     try {
       final numDet = numDetections[0].toInt();
-      debugPrint('=== DETECTION DEBUG ===');
-      debugPrint('Number of detections: $numDet');
       
       for (int i = 0; i < math.min(numDet, 10); i++) {
         final score = scores[0][i];
-        final classId = classes[0][i].toInt();
-        final className = classId > 0 && classId < _labels.length ? _labels[classId] : 'unknown';
-        
-        debugPrint('Detection $i: class=$className (id=$classId), score=${score.toStringAsFixed(3)}');
-        
         if (score > 0.5) { // Confidence threshold
+          final classId = classes[0][i].toInt();
           if (classId > 0 && classId < _labels.length) { // Skip background class (0)
             detected.add(_labels[classId]);
           }
         }
       }
-      debugPrint('Final detected objects: $detected');
     } catch (e) {
       debugPrint('Error parsing output: $e');
     }

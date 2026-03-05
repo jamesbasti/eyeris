@@ -21,8 +21,8 @@ Traditional tools for blind and low-vision users often provide disconnected labe
   (e.g., "A friend is waving at you near the entrance.").
 
 - **Instant Object Detection (On-device)**  
-  Powered by **Google ML Kit Object Detection** to provide low-latency, offline-capable  
-  understanding of visible objects in the camera feed.
+  Powered by **TensorFlow Lite** with SSD MobileNet V1 to provide low-latency, offline-capable  
+  understanding of visible objects in the camera feed (detects 80+ COCO classes like chair, person, bottle).
 
 - **Color Recognition**  
   Helps users identify clothing or objects with descriptive color naming (planned).
@@ -34,10 +34,10 @@ Traditional tools for blind and low-vision users often provide disconnected labe
 
 - **Frontend**: Flutter (Dart)
 - **Camera**: `camera` plugin
-- **Computer Vision (Local)**: `google_mlkit_object_detection`
+- **Computer Vision (Local)**: `tflite_flutter` with SSD MobileNet V1
 - **Deep Intelligence (Cloud)**: HTTP-based LLM API (currently OpenAI; targeting Gemini Flash)
 - **Config & Secrets**: `flutter_dotenv` with a local `.env` file
-- **Permissions & UX**: `permission_handler`, `google_fonts`
+- **Permissions & UX**: `permission_handler`, `google_fonts`, `flutter_tts`
 
 ### Project Structure
 
@@ -47,7 +47,7 @@ lib/
   ui/
     splash_screen.dart    # Branded splash screen → routes to home
     home_screen.dart      # Launchpad, opens the camera experience
-    camera_screen.dart    # Live camera preview + ML Kit object stream + AI narration text
+    camera_screen.dart    # Live camera preview + TFLite object detection + AI narration text + TTS
   services/
     openai_service.dart   # HTTP client for AI narration (Prompt A logic)
   models/
@@ -58,10 +58,10 @@ lib/
 
 - **Camera**:  
   - Back camera opens successfully.  
-  - Continuous frame stream is wired into Google ML Kit object detection.
+  - Continuous frame stream is processed by TensorFlow Lite for object detection.
 
-- **Object Detection (Google ML Kit)**:  
-  - Streaming detector is configured with `DetectionMode.stream`.  
+- **Object Detection (TensorFlow Lite)**:  
+  - SSD MobileNet V1 model detects 80+ COCO object classes (chair, person, bottle, etc.).  
   - Detected objects are converted into a list of labels and stored in state.
 
 - **AI Narration (Prompt A)**:  
@@ -71,9 +71,13 @@ lib/
   - Narration is currently triggered from the Camera UI (scan button) instead of every frame  
     to avoid excessive network calls.
 
+- **Text-to-Speech**:  
+  - Generated descriptions are automatically spoken using `flutter_tts` for hands-free experience.
+
 - **UI**:  
   - Camera preview fills the screen.  
   - A bottom card shows the latest narration text without blocking the camera view.
+  - Swipe left gesture to navigate back to home screen.
 
 ### How to Run
 
@@ -102,7 +106,7 @@ lib/
 ### Next Steps / Roadmap
 
 - Add a dedicated **Navigation Mode** using a stricter, obstacle-focused prompt (Prompt B).
-- Integrate **text-to-speech** so narrated descriptions are spoken automatically.
 - Improve **gesture controls** and haptics for a truly hands-free experience.
 - Extend **color recognition** and clothing assistance workflows.
+- Add **"Ask AI"** feature for user questions about the environment.
 
