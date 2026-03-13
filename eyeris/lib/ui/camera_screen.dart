@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -36,6 +37,9 @@ class _CameraScreenState extends State<CameraScreen> {
   /// COCO dataset labels (90 classes)
   List<String> _labels = [];
   
+  /// Debug flag for camera info
+  static bool _printedCameraInfo = false;
+  
   final OpenAIService _openAIService = OpenAIService();
   final FlutterTts _flutterTts = FlutterTts();
 
@@ -51,10 +55,6 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _loadModel() async {
     try {
       _interpreter = await tfl.Interpreter.fromAsset('assets/ml/object_labeler.tflite');
-      
-      // Debug: Check input tensor details
-      final inputTensor = _interpreter!.getInputTensor(0);
-      debugPrint('Model input tensor: shape=${inputTensor.shape}, type=${inputTensor.type}');
       
       // COCO labels (90 classes)
       _labels = [
@@ -123,6 +123,17 @@ class _CameraScreenState extends State<CameraScreen> {
       return;
     }
 
+    // Debug: Print image format info once
+    if (!_printedCameraInfo) {
+      debugPrint('Camera format: ${image.format.group}, width: ${image.width}, height: ${image.height}');
+      debugPrint('Planes: ${image.planes.length}');
+      for (int i = 0; i < image.planes.length; i++) {
+        final plane = image.planes[i];
+        debugPrint('Plane $i: bytes=${plane.bytes.length}, stride=${plane.bytesPerRow}, pixels=${plane.bytesPerPixel}');
+      }
+      _printedCameraInfo = true;
+    }
+
     _isDetecting = true;
     try {
       // Convert CameraImage to input tensor for TFLite
@@ -162,69 +173,37 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   dynamic _convertCameraImageToInputTensor(CameraImage image) {
-    debugPrint('=== FUNCTION CALLED ===');
     try {
       // Get image dimensions
       final width = image.width;
       final height = image.height;
       
       final planes = image.planes;
-      debugPrint('=== CAMERA DEBUG ===');
-      debugPrint('Planes: ${planes.length}');
-      debugPrint('Format: ${image.format.group}');
-      debugPrint('Width: $width, Height: $height');
       
       if (planes.isEmpty) {
         debugPrint('No planes available');
         return null;
       }
       
-      // BGRA8888 format - convert to RGB
-      final plane = planes[0];
-      final buffer = plane.bytes;
-      final int rowStride = plane.bytesPerRow;
+      final firstPlane = planes[0];
+      final buffer = firstPlane.bytes;
+      final stride = firstPlane.bytesPerRow;
       
-      debugPrint('Buffer: length=${buffer.length}, stride=$rowStride');
-
+      // Print image preview to terminal (ASCII art)
+      _printImagePreview(buffer, width, height, stride);
+      
       if (buffer.isEmpty) {
         debugPrint('Empty buffer');
         return null;
       }
-
-      // Create resized RGB buffer (300x300x3) - using uint8 for TFLite
-      const targetSize = 300;
-      final inputBuffer = List<int>.filled(targetSize * targetSize * 3, 0);
       
-      // Simple nearest neighbor resize from BGRA to RGB
-      for (int y = 0; y < targetSize; y++) {
-        for (int x = 0; x < targetSize; x++) {
-          // Map target coordinates to source coordinates with bounds checking
-          final srcX = (x * width / targetSize).floor().clamp(0, width - 1);
-          final srcY = (y * height / targetSize).floor().clamp(0, height - 1);
-          
-          // Calculate BGRA buffer index (4 bytes per pixel)
-          final index = srcY * rowStride + srcX * 4;
-          
-          if (index + 3 >= buffer.length) {
-            debugPrint('Index out of bounds: $index + 3 >= ${buffer.length}');
-            return null;
-          }
-          
-          // Extract BGRA values and convert to RGB
-          final b = buffer[index];        // Blue
-          final g = buffer[index + 1];    // Green  
-          final r = buffer[index + 2];    // Red
-          // buffer[index + 3] is Alpha (ignored)
-          
-          // Store as uint8 (0-255)
-          final targetIndex = (y * targetSize + x) * 3;
-          inputBuffer[targetIndex] = r;
-          inputBuffer[targetIndex + 1] = g;
-          inputBuffer[targetIndex + 2] = b;
-        }
-      }
-
-      debugPrint('Successfully converted image to tensor');
+      // Create input tensor with uint8 values (0-255)
+      const targetSize = 300;
+      final inputBuffer = List<int>.filled(targetSize * targetSize * 3, 128); // Default to gray (128)
+      
+      // Enhanced image processing for better accuracy
+      _processImageWithEnhancement(buffer, inputBuffer, width, height, stride, targetSize);
+      
       // Reshape to [1, 300, 300, 3] for TFLite input
       return inputBuffer.reshape([1, targetSize, targetSize, 3]);
     } catch (e) {
@@ -238,6 +217,106 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
+  /// Print ASCII art preview of the camera image to terminal
+  void _printImagePreview(Uint8List buffer, int width, int height, int stride) {
+    debugPrint('\n=== CAMERA PREVIEW ===');
+    const previewSize = 20; // 20x20 ASCII preview
+    
+    for (int y = 0; y < previewSize && y < height; y += height ~/ previewSize) {
+      String line = '';
+      for (int x = 0; x < previewSize && x < width; x += width ~/ previewSize) {
+        final index = y * stride + x * 4; // BGRA format
+        if (index + 2 < buffer.length) {
+          final b = buffer[index];
+          final g = buffer[index + 1];
+          final r = buffer[index + 2];
+          
+          // Convert to grayscale for ASCII
+          final gray = (0.299 * r + 0.587 * g + 0.114 * b).round();
+          
+          // ASCII characters from dark to light
+          if (gray < 51) {
+            line += '█';
+          } else if (gray < 102) {
+            line += '▓';
+          } else if (gray < 153) {
+            line += '▒';
+          } else if (gray < 204) {
+            line += '░';
+          } else {
+            line += ' ';
+          }
+        } else {
+          line += '?';
+        }
+      }
+      debugPrint(line);
+    }
+    debugPrint('=== END PREVIEW ===\n');
+  }
+
+  /// Enhanced image processing for better accuracy and foreground focus
+  void _processImageWithEnhancement(
+    Uint8List buffer,
+    List<int> inputBuffer,
+    int width,
+    int height,
+    int stride,
+    int targetSize,
+  ) {
+    try {
+      // Higher quality sampling (every 2 pixels instead of 10)
+      for (int y = 0; y < targetSize && y < height; y += 2) {
+        for (int x = 0; x < targetSize && x < width; x += 2) {
+          final index = y * stride + x * 4; // BGRA format
+          if (index + 3 < buffer.length) {
+            // Extract BGRA values
+            final b = buffer[index];
+            final g = buffer[index + 1];
+            final r = buffer[index + 2];
+            
+            // Apply contrast enhancement for better object detection
+            final enhancedR = _enhancePixel(r);
+            final enhancedG = _enhancePixel(g);
+            final enhancedB = _enhancePixel(b);
+            
+            // Set a small region around this pixel for better coverage
+            for (int dy = 0; dy < 2 && y + dy < targetSize; dy++) {
+              for (int dx = 0; dx < 2 && x + dx < targetSize; dx++) {
+                final targetIndex = ((y + dy) * targetSize + (x + dx)) * 3;
+                if (targetIndex + 2 < inputBuffer.length) {
+                  inputBuffer[targetIndex] = enhancedR;
+                  inputBuffer[targetIndex + 1] = enhancedG;
+                  inputBuffer[targetIndex + 2] = enhancedB;
+                }
+              }
+            }
+          }
+        }
+      }
+      debugPrint('Enhanced image processed successfully');
+    } catch (e) {
+      debugPrint('Error during enhanced processing: $e');
+      // Fallback to simple gray fill
+      for (int i = 0; i < inputBuffer.length; i++) {
+        inputBuffer[i] = 128;
+      }
+    }
+  }
+
+  /// Enhance individual pixel for better contrast and detection
+  int _enhancePixel(int value) {
+    // Apply gamma correction and contrast enhancement
+    final normalized = value / 255.0;
+    final gamma = 0.8; // Slight gamma correction
+    final contrast = 1.2; // Increase contrast
+    
+    final enhanced = math.pow(normalized, gamma) * contrast;
+    final clamped = enhanced.clamp(0.0, 1.0);
+    
+    return (clamped * 255).round();
+  }
+
   List<String> _parseOutput(
     List<List<List<double>>> boxes,
     List<List<double>> classes,
@@ -248,28 +327,64 @@ class _CameraScreenState extends State<CameraScreen> {
     
     try {
       final numDet = numDetections[0].toInt();
-      debugPrint('=== DETECTION DEBUG ===');
+      debugPrint('=== DETECTION RESULTS ===');
       debugPrint('Number of detections: $numDet');
       
+      // Sort detections by score (confidence) to prioritize high-confidence objects
+      final List<Map<String, dynamic>> sortedDetections = [];
       for (int i = 0; i < math.min(numDet, 10); i++) {
         final score = scores[0][i];
         final classId = classes[0][i].toInt();
-        final className = classId > 0 && classId < _labels.length ? _labels[classId] : 'unknown';
+        final box = boxes[0][i];
         
-        debugPrint('Detection $i: class=$className (id=$classId), score=${score.toStringAsFixed(3)}');
-        
-        if (score > 0.5) { // Confidence threshold
-          if (classId > 0 && classId < _labels.length) { // Skip background class (0)
-            detected.add(_labels[classId]);
-          }
+        if (score > 0.3) { // Lower threshold initially, we'll filter later
+          sortedDetections.add({
+            'score': score,
+            'classId': classId,
+            'box': box,
+            'className': classId > 0 && classId < _labels.length ? _labels[classId] : 'unknown'
+          });
         }
       }
+      
+      // Sort by score (highest first)
+      sortedDetections.sort((a, b) => b['score'].compareTo(a['score']));
+      
+      // Filter for foreground objects (larger boxes, higher confidence)
+      final foregroundDetections = sortedDetections.where((detection) {
+        final score = detection['score'] as double;
+        final box = detection['box'] as List<double>;
+        
+        // Calculate box area (approximate size)
+        final width = box[2] - box[0]; // x2 - x1
+        final height = box[3] - box[1]; // y2 - y1
+        final area = width * height;
+        
+        // Prioritize larger objects (likely foreground) and higher confidence
+        final isLargeEnough = area > 0.01; // Minimum size threshold
+        final isHighConfidence = score > 0.5; // Higher confidence threshold
+        
+        debugPrint('Detection: ${detection['className']} - Score: ${score.toStringAsFixed(3)}, Area: ${area.toStringAsFixed(3)}');
+        
+        return isLargeEnough && isHighConfidence;
+      }).toList();
+      
+      // Take top 3-5 most confident foreground detections
+      final topDetections = foregroundDetections.take(5).toList();
+      
+      for (final detection in topDetections) {
+        final className = detection['className'] as String;
+        if (!detected.contains(className)) {
+          detected.add(className);
+        }
+      }
+      
       debugPrint('Final detected objects: $detected');
     } catch (e) {
       debugPrint('Error parsing output: $e');
     }
     
-    return detected.toSet().toList(); // Remove duplicates
+    return detected;
   }
 
   Future<void> _runSceneNarration() async {
