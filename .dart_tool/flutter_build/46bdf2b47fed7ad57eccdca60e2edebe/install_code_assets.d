@@ -1,0 +1,1 @@
+ /Users/jamesbasti/Development/eyeris/.dart_tool/flutter_build/46bdf2b47fed7ad57eccdca60e2edebe/native_assets.json:  /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/objective_c.dylib

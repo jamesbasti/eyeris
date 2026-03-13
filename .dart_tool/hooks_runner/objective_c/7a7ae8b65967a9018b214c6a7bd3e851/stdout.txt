@@ -1,0 +1,50 @@
+Running `(cd /Users/jamesbasti/.pub-cache/hosted/pub.dev/objective_c-9.3.0/; ANDROID_HOME=/Users/jamesbasti/Library/Android/sdk TMPDIR=/var/folders/b3/70mb1bnn39z0jj_h545h_q_40000gn/T/ PATH=/Applications/Xcode.app/Contents/SharedFrameworks/SwiftBuild.framework/Versions/A/PlugIns/SWBBuildService.bundle/Contents/PlugIns/SWBUniversalPlatformPlugin.bundle/Contents/Frameworks/SWBUniversalPlatform.framework/Resources:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/local/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/usr/local/bin:/Users/jamesbasti/Documents/Development/flutter/bin/:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/pmk/env/global/bin:/Library/Apple/usr/bin:/Users/jamesbasti/Documents/Development/flutter/bin:/Applications/Visual Studio Code.app/Contents/Resources/app/bin HOME=/Users/jamesbasti /Users/jamesbasti/Documents/Development/flutter/bin/cache/dart-sdk/bin/dart --packages=/Users/jamesbasti/Development/eyeris/.dart_tool/package_config.json /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/objective_c/7a7ae8b65967a9018b214c6a7bd3e851/hook.dill --config=/Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/objective_c/7a7ae8b65967a9018b214c6a7bd3e851/input.json )`.
+INFO: 2026-03-13 21:01:19.133561: Running `/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang --version`.
+
+INFO: 2026-03-13 21:01:19.381479: Running `/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang --version`.
+
+INFO: 2026-03-13 21:01:19.432189: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -target arm64-apple-ios -mios-version-min=12 -c /Users/jamesbasti/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/include/dart_api_dl.c -fpic -I src -o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/include/dart_api_dl.c.o
+
+INFO: 2026-03-13 21:01:19.433099: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -target arm64-apple-ios -mios-version-min=12 -x objective-c -fobjc-arc -c /Users/jamesbasti/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/input_stream_adapter.m -fpic -I src -o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7INFO: 2026-03-13 21:01:19.433254: Running: /INFO: 2026-03-13 21:01:19.433534: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -target arm64-apple-ios -mios-version-min=12 -x objective-c -fobjc-arc -c /Users/jamesbasti/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/ns_number.m -fpic -I src -o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/ns_number.m.o
+INFO: 2026-03-13 21:01:19.433672: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -target arm64-apple-ios -mios-version-min=12 -x objective-c -fobjc-arc -c /Users/jamesbasti/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/protocol.m -fpic -I src -o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/protocol.m.o
+
+INFO: 2026-03-13 21:01:19.433813: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -target arm64-apple-ios -mios-version-min=12 -x objective-c -fobjc-arc -c /Users/jamesbasti/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/objective_c_bindings_generated.m -fpic -I src -o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/objective_c_bindings_generated.m.o
+
+INFO: 2026-03-13 21:01:19.811421: 
+INFO: 2026-03-13 21:01:19.811647: 
+INFO: 2026-03-13 21:01:19.811722: Generated /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/include/dart_api_dl.c.o
+INFO: 2026-03-13 21:01:19.815467: 
+INFO: 2026-03-13 21:01:19.815532: 
+INFO: 2026-03-13 21:01:19.815547: Generated /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/objective_c.c.o
+
+INFO: 2026-03-13 21:01:19.848746: 
+INFO: 2026-03-13 21:01:19.848803: 
+INFO: 2026-03-13 21:01:19.848821: Generated /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/observer.m.o
+
+INFO: 2026-03-13 21:01:19.852657: 
+INFO: 2026-03-13 21:01:19.852876: 
+INFO: 2026-03-13 21:01:19.852936: Generated /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/protocol.m.o
+
+INFO: 2026-03-13 21:01:20.158859: 
+INFO: 2026-03-13 21:01:20.158966: 
+INFO: 2026-03-13 21:01:20.158987: Generated /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/ns_number.m.o
+
+INFO: 2026-03-13 21:01:20.174609: 
+INFO: 2026-03-13 21:01:20.174656: 
+INFO: 2026-03-13 21:01:20.174671: Generated /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/objective_c.m.o
+
+INFO: 2026-03-13 21:01:20.178444: 
+INFO: 2026-03-13 21:01:20.178496: 
+INFO: 2026-03-13 21:01:20.178512: Generated /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/input_stream_adapter.m.o
+
+INFO: 2026-03-13 21:01:20.215099: 
+INFO: 2026-03-13 21:01:20.215202: 
+INFO: 2026-03-13 21:01:20.215236: Generated /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/objective_c_bindings_generated.m.o
+
+INFO: 2026-03-13 21:01:20.216485: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -shared -Wl,-encryptable -undefined dynamic_lookup -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk -target arm64-apple-ios -mios-version-min=12 /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/include/dart_api_dl.c.o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/objective_c.c.o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/input_stream_adapter.m.o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/objective_c.m.o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/observer.m.o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/ns_number.m.o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/protocol.m.o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/obj/src/objective_c_bindings_generated.m.o -o /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/objective_c.dylib
+
+INFO: 2026-03-13 21:01:20.441293: 
+INFO: 2026-03-13 21:01:20.441582: ld: warning: -undefined dynamic_lookup is deprecated on iOS
+
+INFO: 2026-03-13 21:01:20.441640: Generated /Users/jamesbasti/Development/eyeris/.dart_tool/hooks_runner/shared/objective_c/build/7a7ae8b659/objective_c.dylib
+
