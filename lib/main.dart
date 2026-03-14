@@ -2,11 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'ui/splash_screen.dart';  // ← update path if you used different folder
+
+import 'core/app_theme.dart';
+import 'ui/splash_screen.dart';
 
 Future<void> main() async {
   await dotenv.load(); // Load environment variables from .env file
-  debugPrint('API Key: ${dotenv.env['OPENAI_API_KEY']}');
   runApp(const EyerisApp());
 }
 
@@ -18,7 +19,7 @@ class EyerisApp extends StatelessWidget {
     return MaterialApp(
       title: 'Eyeris',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
+      theme: buildEyerisTheme(),
       home: const SplashScreen(),
     );
   }
