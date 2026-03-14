@@ -55,7 +55,7 @@ class ScreenHeader extends StatelessWidget {
                   ),
                   child: Center(
                     child: EyerisIcons.backArrow(
-                      size: 20,
+                      size: 28,
                       color: EyerisColors.black,
                     ),
                   ),

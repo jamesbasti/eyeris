@@ -93,7 +93,7 @@ class _NavigateScreenState extends State<NavigateScreen> {
                 ActionRow(
                   label: 'Walk Mode',
                   sublabel: 'Haptic + audio turns',
-                  icon: EyerisIcons.walk(size: 22),
+                  icon: EyerisIcons.walk(size: 28),
                   onPress: widget.onWalkModeTap,
                   semanticsLabel:
                       'Walk mode. Provides haptic and audio turn guidance.',
@@ -104,7 +104,7 @@ class _NavigateScreenState extends State<NavigateScreen> {
                 ActionRow(
                   label: 'Indoor Map',
                   sublabel: 'Obstacle detection on',
-                  icon: EyerisIcons.indoorMap(size: 22),
+                  icon: EyerisIcons.indoorMap(size: 28),
                   onPress: widget.onIndoorMapTap,
                   semanticsLabel:
                       'Indoor map. Navigate indoors with obstacle detection.',
@@ -118,7 +118,7 @@ class _NavigateScreenState extends State<NavigateScreen> {
                 ActionRow(
                   label: 'Nearest Bus',
                   sublabel: 'Transit + live arrival',
-                  icon: EyerisIcons.bus(size: 22),
+                  icon: EyerisIcons.bus(size: 28),
                   onPress: widget.onNearestBusTap,
                   semanticsLabel:
                       'Nearest bus. Find transit options with live arrivals.',

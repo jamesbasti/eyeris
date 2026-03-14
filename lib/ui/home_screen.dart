@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildCard(
                     label: 'Read',
                     sublabel: 'Scan text &\ndocuments',
-                    icon: EyerisIcons.read(size: 26),
+                    icon: EyerisIcons.read(size: 36),
                     badge: 'AAA',
                     semanticsLabel: 'Read. Scan text and documents.',
                     semanticsHint: 'Double tap to open Read screen.',
@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildCard(
                     label: 'Navigate',
                     sublabel: 'Indoor &\noutdoor',
-                    icon: EyerisIcons.navigate(size: 26),
+                    icon: EyerisIcons.navigate(size: 36),
                     semanticsLabel: 'Navigate. Indoor and outdoor guidance.',
                     semanticsHint: 'Double tap to open Navigate screen.',
                     onTap: widget.onNavigateTap,
@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildCard(
                     label: 'Identify',
                     sublabel: 'Objects, faces\n& colors',
-                    icon: EyerisIcons.identify(size: 26),
+                    icon: EyerisIcons.identify(size: 36),
                     semanticsLabel: 'Identify. Describe objects, faces and colors.',
                     semanticsHint: 'Double tap to open Identify screen.',
                     onTap: widget.onIdentifyTap,
@@ -111,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildCard(
                     label: 'Communicate',
                     sublabel: 'Calls, messages\n& alerts',
-                    icon: EyerisIcons.communicate(size: 26),
+                    icon: EyerisIcons.communicate(size: 36),
                     semanticsLabel: 'Communicate. Calls, messages and alerts.',
                     semanticsHint: 'Double tap to open Communicate screen.',
                     onTap: widget.onCommunicateTap,

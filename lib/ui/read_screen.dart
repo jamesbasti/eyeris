@@ -101,7 +101,7 @@ class _ReadScreenState extends State<ReadScreen> {
                 ActionRow(
                   label: 'Point & Read',
                   sublabel: 'Camera → instant speech',
-                  icon: EyerisIcons.camera(size: 22),
+                  icon: EyerisIcons.camera(size: 28),
                   onPress: widget.onPointAndReadTap,
                   semanticsLabel:
                       'Point and read. Aims camera at text and reads it aloud.',
@@ -112,7 +112,7 @@ class _ReadScreenState extends State<ReadScreen> {
                 ActionRow(
                   label: 'Scan Document',
                   sublabel: 'PDF, photo, receipt',
-                  icon: EyerisIcons.document(size: 22),
+                  icon: EyerisIcons.document(size: 28),
                   onPress: widget.onScanDocumentTap,
                   semanticsLabel:
                       'Scan document. Import a PDF, photo, or receipt for reading.',
@@ -126,7 +126,7 @@ class _ReadScreenState extends State<ReadScreen> {
                 ActionRow(
                   label: 'Reading Speed',
                   sublabel: 'Slow · Normal · Fast',
-                  icon: EyerisIcons.clock(size: 22),
+                  icon: EyerisIcons.clock(size: 28),
                   onPress: widget.onReadingSpeedTap,
                   semanticsLabel:
                       'Reading speed. Currently set to normal. Double tap to change.',
@@ -136,7 +136,7 @@ class _ReadScreenState extends State<ReadScreen> {
                 ActionRow(
                   label: 'Voice & Language',
                   sublabel: 'English · Filipino · more',
-                  icon: EyerisIcons.voice(size: 22),
+                  icon: EyerisIcons.voice(size: 28),
                   onPress: widget.onVoiceLanguageTap,
                   semanticsLabel:
                       'Voice and language settings. Currently English. '

@@ -176,8 +176,8 @@ class _IconBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40.0,
-      height: 40.0,
+      width: 48.0,
+      height: 48.0,
       decoration: BoxDecoration(
         color: EyerisColors.black,
         border: Border.all(

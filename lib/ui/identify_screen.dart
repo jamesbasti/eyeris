@@ -96,7 +96,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 ActionRow(
                   label: 'Scene Describe',
                   sublabel: 'Full AI description',
-                  icon: EyerisIcons.camera(size: 22),
+                  icon: EyerisIcons.camera(size: 28),
                   onPress: widget.onSceneDescribeTap,
                   semanticsLabel:
                       'Scene describe. Get full AI description of surroundings.',
@@ -107,7 +107,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 ActionRow(
                   label: 'Find Person',
                   sublabel: 'Face recognition',
-                  icon: EyerisIcons.person(size: 22),
+                  icon: EyerisIcons.person(size: 28),
                   onPress: widget.onFindPersonTap,
                   semanticsLabel:
                       'Find person. Use face recognition to locate people.',
@@ -118,7 +118,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 ActionRow(
                   label: 'Color Detect',
                   sublabel: 'Name any color aloud',
-                  icon: EyerisIcons.colorDetect(size: 22),
+                  icon: EyerisIcons.colorDetect(size: 28),
                   onPress: widget.onColorDetectTap,
                   semanticsLabel:
                       'Color detect. Point camera to identify colors.',

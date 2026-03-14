@@ -84,8 +84,8 @@ class _HubCardState extends State<HubCard> {
                   children: [
                     // Icon container
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 64,
+                      height: 64,
                       decoration: BoxDecoration(
                         color: EyerisColors.black,
                         border: Border.all(

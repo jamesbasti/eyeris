@@ -115,7 +115,7 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
                 ActionRow(
                   label: 'Voice Call',
                   sublabel: 'Contacts + speed dial',
-                  icon: EyerisIcons.phone(size: 22),
+                  icon: EyerisIcons.phone(size: 28),
                   onPress: widget.onVoiceCallTap,
                   semanticsLabel:
                       'Voice call. Opens contacts list for calling. '
@@ -127,7 +127,7 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
                 ActionRow(
                   label: 'Messages',
                   sublabel: 'Read aloud + dictate reply',
-                  icon: EyerisIcons.message(size: 22),
+                  icon: EyerisIcons.message(size: 28),
                   onPress: widget.onMessagesTap,
                   semanticsLabel:
                       'Messages. Reads your messages aloud and lets you '
