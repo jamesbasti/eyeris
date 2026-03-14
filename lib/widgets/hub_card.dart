@@ -51,74 +51,67 @@ class _HubCardState extends State<HubCard> {
         onTapCancel: () => setState(() => _pressed = false),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 80),
-          // No fixed height — fills the Expanded row provided by HubCardGrid.
-          // minHeight still enforces the WCAG touch target floor.
           constraints: const BoxConstraints(
             minHeight: EyerisTouchTargets.hubCard,
           ),
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            color: _pressed
-                ? const Color(0xFF1A1700) // warm tint on press
-                : EyerisColors.surface,
+            color: _pressed ? const Color(0xFF1A1700) : EyerisColors.surface,
             border: Border.all(
-              color: _pressed
-                  ? EyerisColors.borderFocus
-                  : EyerisColors.border,
+              color: _pressed ? EyerisColors.borderFocus : EyerisColors.border,
               width: EyerisBorders.card,
             ),
             borderRadius: BorderRadius.circular(EyerisRadii.card),
           ),
           child: Stack(
             children: [
-              // Main content
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: EyerisSpacing.sm,
-                  vertical: EyerisSpacing.md,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Icon container
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: EyerisColors.black,
-                        border: Border.all(
-                          color: EyerisColors.primary,
-                          width: EyerisBorders.thick,
+              // Positioned.fill makes the Column fill the full card height,
+              // so mainAxisAlignment.center actually centers content.
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: EyerisSpacing.sm,
+                    vertical: EyerisSpacing.md,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Icon container
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: EyerisColors.black,
+                          border: Border.all(
+                            color: EyerisColors.primary,
+                            width: EyerisBorders.thick,
+                          ),
+                          borderRadius: BorderRadius.circular(EyerisRadii.large),
                         ),
-                        borderRadius: BorderRadius.circular(EyerisRadii.large),
+                        child: Center(child: widget.icon),
                       ),
-                      child: Center(child: widget.icon),
-                    ),
-
-                    const SizedBox(height: EyerisSpacing.sm),
-
-                    // Card label
-                    Text(
-                      widget.label.toUpperCase(),
-                      style: EyerisText.cardLabel,
-                      textAlign: TextAlign.center,
-                    ),
-
-                    // Sublabel (optional)
-                    if (widget.sublabel != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: EyerisSpacing.sm),
+                      // Card label
                       Text(
-                        widget.sublabel!,
-                        style: EyerisText.cardSub,
+                        widget.label.toUpperCase(),
+                        style: EyerisText.cardLabel,
                         textAlign: TextAlign.center,
                       ),
+                      // Sublabel (optional)
+                      if (widget.sublabel != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.sublabel!,
+                          style: EyerisText.cardSub,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-
               // Badge (top-right corner)
               if (widget.badge != null)
                 Positioned(
