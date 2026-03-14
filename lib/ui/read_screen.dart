@@ -253,14 +253,6 @@ class _ReadScreenState extends State<ReadScreen> {
                   // You can add additional logic here if needed
                 }),
             ),
-
-          MicBar(
-            contextLabel: "Say 'Scan Now'",
-            contextHint: 'Or point camera at text',
-            onPress: widget.onMicTap,
-            onLongPress: widget.onMicLongPress,
-            state: widget.micState,
-          ),
         ],
       ),
     );

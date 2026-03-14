@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:eyeris/app.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables for API keys
+  await dotenv.load(fileName: ".env");
 
   // Lock to portrait — accessibility layouts are
   // designed for vertical phone orientation only.
