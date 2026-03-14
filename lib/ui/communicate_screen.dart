@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/widgets/action_row.dart';
+import 'package:eyeris/widgets/gesture_layer.dart';
+import 'package:eyeris/widgets/gesture_navigation.dart';
 import 'package:eyeris/widgets/mic_bar.dart';
 import 'package:eyeris/widgets/screen_header.dart';
 import 'package:eyeris/widgets/section_label.dart';
@@ -37,6 +39,7 @@ class CommunicateScreen extends StatefulWidget {
   final VoidCallback onMicTap;
   final VoidCallback? onMicLongPress;
   final MicBarState micState;
+  final GestureLayerConfig? gestureConfig;
 
   const CommunicateScreen({
     super.key,
@@ -48,6 +51,7 @@ class CommunicateScreen extends StatefulWidget {
     this.onMicTap        = _noop,
     this.onMicLongPress,
     this.micState        = MicBarState.idle,
+    this.gestureConfig,
   });
 
   static void _noop() {}
@@ -106,7 +110,13 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
           ),
 
           Expanded(
-            child: ListView(
+            child: GestureLayer(
+              onBack:     widget.gestureConfig?.onBack,
+              onVoice:    widget.gestureConfig?.onVoice,
+              screenName: widget.gestureConfig?.screenName ?? 'Communicate screen',
+              options:    widget.gestureConfig?.options ??
+                  ['Voice Call', 'Messages', 'Emergency SOS'],
+              child: ListView(
               padding: const EdgeInsets.all(EyerisSpacing.md2),
               children: [
                 const SectionLabel('Connect'),
@@ -145,6 +155,7 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
                 ),
               ],
             ),
+            ),  // GestureLayer
           ),
 
           MicBar(

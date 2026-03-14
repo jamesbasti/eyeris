@@ -8,6 +8,7 @@ import 'package:eyeris/ui/navigate_screen.dart';
 import 'package:eyeris/ui/identify_screen.dart';
 import 'package:eyeris/ui/communicate_screen.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
+import 'package:eyeris/widgets/gesture_navigation.dart';
 import 'package:eyeris/widgets/sos_modal.dart';
 
 class EyerisApp extends StatelessWidget {
@@ -83,6 +84,13 @@ class _ReadRoute extends StatelessWidget {
       onReadingSpeedTap:  () {},
       onVoiceLanguageTap: () {},
       onMicTap:           () {},
+      gestureConfig: GestureLayerConfig(
+        onBack:     () => Navigator.pop(context),
+        onVoice:    () {},
+        screenName: 'Read screen',
+        options:    ['Point and Read', 'Scan Document',
+                     'Reading Speed', 'Voice and Language'],
+      ),
     );
   }
 }
@@ -98,6 +106,12 @@ class _NavigateRoute extends StatelessWidget {
       onIndoorMapTap:  () {},
       onNearestBusTap: () {},
       onMicTap:        () {},
+      gestureConfig: GestureLayerConfig(
+        onBack:     () => Navigator.pop(context),
+        onVoice:    () {},
+        screenName: 'Navigate screen',
+        options:    ['Walk Mode', 'Indoor Map', 'Nearest Bus'],
+      ),
     );
   }
 }
@@ -113,6 +127,12 @@ class _IdentifyRoute extends StatelessWidget {
       onFindPersonTap:    () {},
       onColorDetectTap:   () {},
       onMicTap:           () {},
+      gestureConfig: GestureLayerConfig(
+        onBack:     () => Navigator.pop(context),
+        onVoice:    () {},
+        screenName: 'Identify screen',
+        options:    ['Scene Describe', 'Find Person', 'Color Detect'],
+      ),
     );
   }
 }
@@ -147,6 +167,12 @@ class _CommunicateRouteState extends State<_CommunicateRoute> {
       onSOSTap:       CommunicateScreen.sosDefaultTap,
       onSOSLongPress: _showSOS,
       onMicTap:       () {},
+      gestureConfig: GestureLayerConfig(
+        onBack:     () => Navigator.pop(context),
+        onVoice:    () {},
+        screenName: 'Communicate screen',
+        options:    ['Voice Call', 'Messages', 'Emergency SOS'],
+      ),
     );
   }
 }

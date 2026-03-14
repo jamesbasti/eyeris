@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/widgets/action_row.dart';
+import 'package:eyeris/widgets/gesture_layer.dart';
+import 'package:eyeris/widgets/gesture_navigation.dart';
 import 'package:eyeris/widgets/mic_bar.dart';
 import 'package:eyeris/widgets/screen_header.dart';
 import 'package:eyeris/widgets/section_label.dart';
@@ -32,6 +34,7 @@ class IdentifyScreen extends StatefulWidget {
   final VoidCallback onMicTap;
   final VoidCallback? onMicLongPress;
   final MicBarState micState;
+  final GestureLayerConfig? gestureConfig;
 
   const IdentifyScreen({
     super.key,
@@ -42,6 +45,7 @@ class IdentifyScreen extends StatefulWidget {
     this.onMicTap           = _noop,
     this.onMicLongPress,
     this.micState           = MicBarState.idle,
+    this.gestureConfig,
   });
 
   static void _noop() {}
@@ -87,7 +91,13 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
           ),
 
           Expanded(
-            child: ListView(
+            child: GestureLayer(
+              onBack:     widget.gestureConfig?.onBack,
+              onVoice:    widget.gestureConfig?.onVoice,
+              screenName: widget.gestureConfig?.screenName ?? 'Identify screen',
+              options:    widget.gestureConfig?.options ??
+                  ['Scene Describe', 'Find Person', 'Color Detect'],
+              child: ListView(
               padding: const EdgeInsets.all(EyerisSpacing.md2),
               children: [
                 const SectionLabel('Describe'),
@@ -126,6 +136,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
                 ),
               ],
             ),
+            ),  // GestureLayer
           ),
 
           MicBar(
