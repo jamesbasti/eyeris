@@ -8,10 +8,9 @@ import 'package:eyeris/widgets/section_label.dart';
 import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 
 // ─────────────────────────────────────────────
-// COMMUNICATE SCREEN  (Phase 3 — UI shell only)
+// COMMUNICATE SCREEN (Phase 3 — UI shell only)
 //
 // Layout:
-//   AppStatusBar
 //   ScreenHeader "COMMUNICATE" + back button
 //   ScrollView:
 //     Section "CONNECT"
@@ -97,7 +96,7 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppStatusBar(),
+                // ── Screen header
                 ScreenHeader(
                   title: 'Communicate',
                   onBack: widget.onBack,

@@ -166,6 +166,12 @@ class EyerisText {
       height: height,
     );
   }
+  
+  static const TextStyle statusBar = TextStyle(fontSize: 12, fontFamily: EyerisTheme.fontFamily, color: EyerisTheme.textMuted);
+  static const TextStyle screenTitle = TextStyle(fontSize: 16, fontFamily: EyerisTheme.fontFamily, fontWeight: FontWeight.w600, color: EyerisTheme.textPrimary);
+  static const TextStyle cardLabel = TextStyle(fontSize: 15, fontFamily: EyerisTheme.fontFamily, fontWeight: FontWeight.w600, color: EyerisTheme.textPrimary);
+  static const TextStyle cardSub = TextStyle(fontSize: 11, fontFamily: EyerisTheme.fontFamily, color: EyerisTheme.textMuted);
+  static const TextStyle badge = TextStyle(fontSize: 9, fontFamily: EyerisTheme.fontFamily, fontWeight: FontWeight.w700, color: EyerisTheme.textPrimary);
 }
 
 class EyerisBorders {

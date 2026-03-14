@@ -1,36 +1,33 @@
-// lib/widgets/hub_card.dart
-// Large cards on the home screen. Min height 110px, border feedback on press.
-
 import 'package:flutter/material.dart';
-
 import 'package:eyeris/core/app_theme.dart';
 
-/// Hub card: icon + label + sublabel + optional badge. Min height 110px.
-/// Entire card is one touchable; pressed state changes border to primary (no opacity).
+// ─────────────────────────────────────────────
+// HUB CARD
+// Large square card for the home screen 2×2 grid.
+// Minimum height: 110px (EyerisTouchTargets.hubCard)
+// ─────────────────────────────────────────────
+
 class HubCard extends StatefulWidget {
+  final String label;
+  final String? sublabel;
+  final Widget icon;
+  final VoidCallback onTap;
+  final String? badge;
+
+  // Accessibility — always provide an explicit label
+  final String semanticsLabel;
+  final String? semanticsHint;
+
   const HubCard({
     super.key,
     required this.label,
     this.sublabel,
     required this.icon,
-    required this.onPress,
+    required this.onTap,
     this.badge,
-    required this.accessibilityLabel,
-    this.accessibilityHint,
-    this.testID,
-    this.enabled = true,
+    required this.semanticsLabel,
+    this.semanticsHint,
   });
-
-  final String label;
-  final String? sublabel;
-  final Widget icon;
-  final VoidCallback onPress;
-  /// e.g. "AAA", "NEW", "LIVE"
-  final String? badge;
-  final String accessibilityLabel;
-  final String? accessibilityHint;
-  final String? testID;
-  final bool enabled;
 
   @override
   State<HubCard> createState() => _HubCardState();
@@ -41,111 +38,110 @@ class _HubCardState extends State<HubCard> {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = !widget.enabled
-        ? EyerisTheme.border
-        : _pressed
-            ? EyerisTheme.primary
-            : EyerisTheme.border;
-
     return Semantics(
-      label: widget.accessibilityLabel,
-      hint: widget.accessibilityHint,
+      label: widget.semanticsLabel,
+      hint: widget.semanticsHint,
       button: true,
-      enabled: widget.enabled,
       child: GestureDetector(
-        onTapDown: widget.enabled ? (_) => setState(() => _pressed = true) : null,
-        onTapUp: widget.enabled ? (_) => setState(() => _pressed = false) : null,
-        onTapCancel: widget.enabled ? () => setState(() => _pressed = false) : null,
-        onTap: widget.enabled ? widget.onPress : null,
-        child: Opacity(
-          opacity: widget.enabled ? 1 : 0.4,
-          child: Container(
-            constraints: BoxConstraints(minHeight: EyerisTheme.touchHubCard),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            decoration: BoxDecoration(
-              color: EyerisTheme.surface,
-              borderRadius: BorderRadius.circular(EyerisTheme.radiusLarge),
-              border: Border.all(color: borderColor, width: EyerisTheme.borderThick),
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) {
+          setState(() => _pressed = false);
+          widget.onTap();
+        },
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 80),
+          // No fixed height — fills the Expanded row provided by HubCardGrid.
+          // minHeight still enforces the WCAG touch target floor.
+          constraints: const BoxConstraints(
+            minHeight: EyerisTouchTargets.hubCard,
+          ),
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: _pressed
+                ? const Color(0xFF1A1700) // warm tint on press
+                : EyerisColors.surface,
+            border: Border.all(
+              color: _pressed
+                  ? EyerisColors.borderFocus
+                  : EyerisColors.border,
+              width: EyerisBorders.card,
             ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Badge (optional), top-right, 8px from top and right
-                if (widget.badge != null)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            borderRadius: BorderRadius.circular(EyerisRadii.card),
+          ),
+          child: Stack(
+            children: [
+              // Main content
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: EyerisSpacing.sm,
+                  vertical: EyerisSpacing.md,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Icon container
+                    Container(
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
-                        color: EyerisTheme.primary,
+                        color: EyerisColors.black,
+                        border: Border.all(
+                          color: EyerisColors.primary,
+                          width: EyerisBorders.thick,
+                        ),
+                        borderRadius: BorderRadius.circular(EyerisRadii.large),
+                      ),
+                      child: Center(child: widget.icon),
+                    ),
+
+                    const SizedBox(height: EyerisSpacing.sm),
+
+                    // Card label
+                    Text(
+                      widget.label.toUpperCase(),
+                      style: EyerisText.cardLabel,
+                      textAlign: TextAlign.center,
+                    ),
+
+                    // Sublabel (optional)
+                    if (widget.sublabel != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.sublabel!,
+                        style: EyerisText.cardSub,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Badge (top-right corner)
+              if (widget.badge != null)
+                Positioned(
+                  top: EyerisSpacing.sm,
+                  right: EyerisSpacing.sm,
+                  child: ExcludeSemantics(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: EyerisColors.primary,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         widget.badge!.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 7,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black,
-                          fontFamily: EyerisTheme.fontFamily,
-                          letterSpacing: 0.05 * 7,
-                        ),
+                        style: EyerisText.badge,
                       ),
                     ),
                   ),
-                // Column: icon, label, sublabel
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Icon container: 48×48, radius 12, background #000, border 2px primary
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: EyerisTheme.primary, width: 2),
-                        ),
-                        alignment: Alignment.center,
-                        child: widget.icon,
-                      ),
-                      const SizedBox(height: 8),
-                      // Label: 11px bold white UPPERCASE, center, letter-spacing 0.08em, line-height 1.3
-                      Text(
-                        widget.label.toUpperCase(),
-                        textAlign: TextAlign.center,
-                        style: typography(
-                          size: 'sm',
-                          weight: FontWeight.w700,
-                          color: EyerisTheme.textPrimary,
-                          letterSpacingKey: 'wide',
-                        ).copyWith(
-                          height: 1.3,
-                          letterSpacing: 11 * 0.08,
-                        ),
-                      ),
-                      if (widget.sublabel != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.sublabel!,
-                          textAlign: TextAlign.center,
-                          style: typography(
-                            size: 'xs',
-                            color: EyerisTheme.textMuted,
-                            letterSpacingKey: 'tight',
-                          ).copyWith(
-                            height: 1.4,
-                            letterSpacing: 9 * 0.03,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
@@ -153,48 +149,55 @@ class _HubCardState extends State<HubCard> {
   }
 }
 
-/// Two-column grid for hub cards. Gap 10px; optional [fillLastRow] for odd count.
+// ─────────────────────────────────────────────
+// HUB CARD GRID
+// 2-column grid layout with even gap.
+// Accepts a fixed list of HubCard widgets.
+// ─────────────────────────────────────────────
+
 class HubCardGrid extends StatelessWidget {
+  final List<HubCard> cards;
+  final double gap;
+
   const HubCardGrid({
     super.key,
-    this.children = const [],
-    this.padding = const EdgeInsets.all(14),
-    this.gap = 10,
-    this.fillLastRow = false,
+    required this.cards,
+    this.gap = 10.0,
   });
-
-  /// Direct list of [HubCard] (or other) widgets.
-  final List<Widget> children;
-  final EdgeInsets padding;
-  final double gap;
-  /// When true and child count is odd, last card spans full width.
-  final bool fillLastRow;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: padding,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final crossAxisCount = 2;
-          final itemWidth = (constraints.maxWidth - gap) / crossAxisCount;
-          final count = children.length;
-          final isOdd = count.isOdd;
-          final lastFullWidth = fillLastRow && isOdd;
+    // Build rows of 2, each row Expanded so they share all available height.
+    final rows = <Widget>[];
+    for (var i = 0; i < cards.length; i += 2) {
+      final left  = cards[i];
+      final right = i + 1 < cards.length ? cards[i + 1] : null;
 
-          return Wrap(
-            spacing: gap,
-            runSpacing: gap,
+      rows.add(
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (int i = 0; i < count; i++)
-                SizedBox(
-                  width: lastFullWidth && i == count - 1 ? constraints.maxWidth : itemWidth,
-                  child: children[i],
-                ),
+              Expanded(child: left),
+              SizedBox(width: gap),
+              Expanded(
+                child: right ?? const SizedBox.shrink(),
+              ),
             ],
-          );
-        },
-      ),
+          ),
+        ),
+      );
+
+      if (i + 2 < cards.length) {
+        rows.add(SizedBox(height: gap));
+      }
+    }
+
+    // Must be in a parent that provides bounded height (e.g. Expanded in Column).
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: rows,
     );
   }
 }

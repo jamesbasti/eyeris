@@ -74,7 +74,7 @@ class _NavigateScreenState extends State<NavigateScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppStatusBar(),
+                // ── Screen header
                 ScreenHeader(
                   title: 'Navigate',
                   onBack: widget.onBack,

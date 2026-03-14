@@ -77,7 +77,7 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppStatusBar(),
+                // ── Screen header
                 ScreenHeader(
                   title: 'Identify',
                   onBack: widget.onBack,

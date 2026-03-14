@@ -82,7 +82,7 @@ class _ReadScreenState extends State<ReadScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppStatusBar(),
+                // ── Screen header
                 ScreenHeader(
                   title: 'Read',
                   onBack: widget.onBack,

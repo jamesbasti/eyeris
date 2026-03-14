@@ -1,12 +1,18 @@
-// lib/widgets/screen_header.dart
-// Top navigation bar: optional back, title, optional right slot. Optional AppStatusBar.
-
 import 'package:flutter/material.dart';
-
 import 'package:eyeris/core/app_theme.dart';
+import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 
-/// Top bar: back (44×44 when [onBack] set), title, [rightElement].
+// ────────// ─────────────────────────────────────
+// SCREEN HEADER
+// Back button (44×44) + title + optional right slot.
+// Announces as a header region to screen readers.
+// ─────────────────────────────────────
+
 class ScreenHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback? onBack;  // null = no back button (home screen)
+  final Widget? rightElement;
+
   const ScreenHeader({
     super.key,
     required this.title,
@@ -14,22 +20,25 @@ class ScreenHeader extends StatelessWidget {
     this.rightElement,
   });
 
-  final String title;
-  final VoidCallback? onBack;
-  final Widget? rightElement;
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.black,
+        color: EyerisColors.black,
         border: Border(
-          bottom: BorderSide(color: EyerisTheme.primary, width: EyerisTheme.borderFocus),
+          bottom: BorderSide(
+            color: EyerisColors.primary,
+            width: EyerisBorders.header,
+          ),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: EyerisSpacing.lg,
+        vertical: EyerisSpacing.md,
+      ),
       child: Row(
         children: [
+          // ── Back button
           if (onBack != null) ...[
             Semantics(
               label: 'Go back',
@@ -38,114 +47,75 @@ class ScreenHeader extends StatelessWidget {
               child: GestureDetector(
                 onTap: onBack,
                 child: Container(
-                  width: EyerisTheme.touchBackButton,
-                  height: EyerisTheme.touchBackButton,
+                  width: EyerisTouchTargets.backButton,
+                  height: EyerisTouchTargets.backButton,
                   decoration: BoxDecoration(
-                    color: EyerisTheme.primary,
-                    borderRadius: BorderRadius.circular(EyerisTheme.radiusSmall),
+                    color: EyerisColors.primary,
+                    borderRadius: BorderRadius.circular(EyerisRadii.small),
                   ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    '←',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black,
-                      fontFamily: EyerisTheme.fontFamily,
+                  child: Center(
+                    child: EyerisIcons.backArrow(
+                      size: 20,
+                      color: EyerisColors.black,
                     ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: EyerisSpacing.md),
           ],
+
+          // ── Title (screen name — announced as header)
           Expanded(
             child: Semantics(
               header: true,
               child: Text(
                 title.toUpperCase(),
-                style: typography(
-                  size: 'lg',
-                  weight: FontWeight.w700,
-                  color: EyerisTheme.primary,
-                  letterSpacingKey: 'wider',
-                ).copyWith(letterSpacing: 15 * 0.1),
-                overflow: TextOverflow.ellipsis,
+                style: EyerisText.screenTitle,
               ),
             ),
           ),
-          if (rightElement != null) ...[
-            const SizedBox(width: 12),
-            rightElement!,
-          ],
+
+          // ── Right slot (profile avatar, settings icon, etc.)
+          if (rightElement != null) rightElement!,
         ],
       ),
     );
   }
 }
 
-/// Decorative status bar row: 40px, time left, app name center, battery right. ExcludeSemantics.
-class AppStatusBar extends StatelessWidget {
-  const AppStatusBar({
-    super.key,
-    this.showTime = true,
-    this.appName = 'EYERIS ●',
-    this.batteryText = '100%',
-  });
+// ─────────────────────────────────────────────
+// PROFILE AVATAR
+// 36×36 circle used in home screen header right slot.
+// ─────────────────────────────────────────────
 
-  final bool showTime;
-  final String appName;
-  final String batteryText;
+class ProfileAvatar extends StatelessWidget {
+  final VoidCallback? onPress;
+
+  const ProfileAvatar({super.key, this.onPress});
 
   @override
   Widget build(BuildContext context) {
-    return ExcludeSemantics(
-      child: Container(
-        height: 40,
-        color: Colors.black,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            if (showTime)
-              Text(
-                _formatTime(DateTime.now()),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: EyerisTheme.textPrimary,
-                  fontFamily: EyerisTheme.fontFamily,
-                  letterSpacing: 0.05 * 11,
-                ),
-              ),
-            const Spacer(),
-            Text(
-              appName,
-              style: TextStyle(
-                fontSize: 11,
-                color: EyerisTheme.textPrimary,
-                fontFamily: EyerisTheme.fontFamily,
-                letterSpacing: 0.05 * 11,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              batteryText,
-              style: TextStyle(
-                fontSize: 11,
-                color: EyerisTheme.textPrimary,
-                fontFamily: EyerisTheme.fontFamily,
-                letterSpacing: 0.05 * 11,
-              ),
-            ),
-          ],
+    return Semantics(
+      label: 'Profile and settings',
+      button: true,
+      child: GestureDetector(
+        onTap: onPress ?? () {},
+        child: Container(
+          // Increased from 36 → 44 to meet WCAG minimum tap target
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            // Yellow fill — high contrast, clearly tappable
+            color: EyerisColors.primary,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            // Black icon on yellow — 21:1 contrast
+            child: EyerisIcons.person(size: 22, color: EyerisColors.black),
+          ),
         ),
       ),
     );
-  }
-
-  static String _formatTime(DateTime t) {
-    final h = t.hour > 12 ? t.hour - 12 : (t.hour == 0 ? 12 : t.hour);
-    final m = t.minute.toString().padLeft(2, '0');
-    final period = t.hour >= 12 ? 'PM' : 'AM';
-    return '$h:$m $period';
   }
 }

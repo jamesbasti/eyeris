@@ -3,7 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/widgets/hub_card.dart';
 import 'package:eyeris/widgets/mic_bar.dart';
-import 'package:eyeris/widgets/profile_avatar.dart';
+import 'package:eyeris/widgets/profile_avatar.dart' as profile;
 import 'package:eyeris/widgets/screen_header.dart';
 import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 
@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(EyerisSpacing.md2),
               child: HubCardGrid(
                 gap: 10,
-                children: [
+                cards: [
                   _buildCard(
                     label: 'Read',
                     sublabel: 'Scan text &\ndocuments',
@@ -139,11 +139,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const AppStatusBar(),
         ScreenHeader(
           title: 'Eyeris',
           // No back button on home screen
-          rightElement: ProfileAvatar(onTap: widget.onProfileTap),
+          rightElement: profile.ProfileAvatar(onTap: widget.onProfileTap),
         ),
       ],
     );
@@ -164,9 +163,9 @@ class _HomeScreenState extends State<HomeScreen> {
       sublabel: sublabel,
       icon: icon,
       badge: badge,
-      onPress: onTap,
-      accessibilityLabel: semanticsLabel,
-      accessibilityHint: semanticsHint,
+      onTap: onTap,
+      semanticsLabel: semanticsLabel,
+      semanticsHint: semanticsHint,
     );
   }
 }
