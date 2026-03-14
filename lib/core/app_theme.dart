@@ -121,6 +121,7 @@ class EyerisColors {
   static const Color white = EyerisTheme.white;
   static const Color black = Color(0xFF000000);
   static const Color borderFocus = EyerisTheme.border;
+  static const Color textOnPrimary = Color(0xFF000000); // Black on yellow background
 }
 
 class EyerisSpacing {
@@ -149,6 +150,22 @@ class EyerisText {
   static const TextStyle rowLabel = TextStyle(fontSize: 15, fontFamily: EyerisTheme.fontFamily, fontWeight: FontWeight.w600);
   static const TextStyle rowSub = TextStyle(fontSize: 11, fontFamily: EyerisTheme.fontFamily, color: EyerisTheme.textMuted);
   static const TextStyle sectionLabel = TextStyle(fontSize: 13, fontFamily: EyerisTheme.fontFamily, fontWeight: FontWeight.w700, letterSpacing: 0.78);
+  static TextStyle mono({
+    double? size,
+    double? letterSpacing,
+    Color? color,
+    FontWeight? weight,
+    double? height,
+  }) {
+    return TextStyle(
+      fontSize: size ?? 14,
+      fontFamily: 'Courier',
+      color: color ?? EyerisTheme.textPrimary,
+      letterSpacing: letterSpacing,
+      fontWeight: weight,
+      height: height,
+    );
+  }
 }
 
 class EyerisBorders {
@@ -157,6 +174,7 @@ class EyerisBorders {
   static const double thick = EyerisTheme.borderThick;
   static const double focus = EyerisTheme.borderFocus;
   static const double card = 1;
+  static const double header = 2.0;
 }
 
 class EyerisRadii {

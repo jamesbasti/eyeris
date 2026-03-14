@@ -115,7 +115,7 @@ class Step1Vision extends StatelessWidget {
             padding: EdgeInsets.only(
               bottom: i < _options.length - 1 ? EyerisSpacing.sm : 0,
             ),
-            child: _SelectCard(
+            child: SelectCard(
               label: opt.label,
               sublabel: opt.sublabel,
               icon: opt.icon,

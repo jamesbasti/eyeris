@@ -20,7 +20,7 @@ class EyerisApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildEyerisTheme(),
       onGenerateRoute: _onGenerateRoute,
-      initialRoute: EyerisRoutes.home,
+     initialRoute: EyerisRoutes.onboarding,   // temporary test
     );
   }
 
@@ -175,9 +175,9 @@ class _NoAnimationRoute<T> extends PageRouteBuilder<T> {
   _NoAnimationRoute({required this.page, required RouteSettings settings})
       : super(
           settings: settings,
-          pageBuilder: (_, __, ___) => page,
+          pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
-          transitionsBuilder: (_, __, ___, child) => child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
         );
 }

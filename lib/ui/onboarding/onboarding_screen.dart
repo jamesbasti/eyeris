@@ -89,10 +89,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _onContinue() {
     if (!_canContinue) {
       setState(() => _showValidationError = true);
-      SemanticsService.announce(
-        'Please select at least one option to continue.',
-        TextDirection.ltr,
-      );
+      if (context.mounted) {
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          'Please select at least one option to continue.',
+          TextDirection.ltr,
+        );
+      }
       return;
     }
 
@@ -100,10 +103,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     if (_step < _totalSteps - 1) {
       setState(() => _step++);
-      SemanticsService.announce(
-        _stepAnnouncement(_step),
-        TextDirection.ltr,
-      );
+      if (context.mounted) {
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          _stepAnnouncement(_step),
+          TextDirection.ltr,
+        );
+      }
     } else {
       // Step 3 complete — hand profile to parent
       widget.onComplete(
@@ -113,10 +119,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           voiceSpeed:      _voiceSpeed,
         ),
       );
-      SemanticsService.announce(
-        'Setup complete. Welcome to Eyeris.',
-        TextDirection.ltr,
-      );
+      if (context.mounted) {
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          'Onboarding complete. Starting Eyeris.',
+          TextDirection.ltr,
+        );
+      }
     }
   }
 
@@ -219,9 +228,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildStep() {
+    Widget stepContent;
     switch (_step) {
       case 0:
-        return Step1Vision(
+        stepContent = Step1Vision(
           selected: _visionTypes,
           onChanged: (v) {
             setState(() {
@@ -231,18 +241,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           },
         );
       case 1:
-        return Step2Interaction(
+        stepContent = Step2Interaction(
           selected: _interactionMode,
           onChanged: (v) => setState(() => _interactionMode = v),
         );
       case 2:
-        return Step3Voice(
+        stepContent = Step3Voice(
           voiceSpeed: _voiceSpeed,
           onSpeedChanged: (v) => setState(() => _voiceSpeed = v),
         );
       default:
-        return const SizedBox.shrink();
+        stepContent = const SizedBox.shrink();
     }
+    
+    return Column(
+      children: [
+        stepContent,
+        if (_showValidationError && _step == 0)
+          Padding(
+            padding: const EdgeInsets.only(top: EyerisSpacing.sm),
+            child: Text(
+              'Please select at least one option to continue.',
+              style: EyerisText.sm.copyWith(
+                color: EyerisColors.danger,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 

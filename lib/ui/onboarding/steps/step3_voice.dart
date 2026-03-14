@@ -64,10 +64,13 @@ class _Step3VoiceState extends State<Step3Voice>
     _pulseCtrl.repeat(reverse: true);
     HapticFeedback.mediumImpact();
 
-    SemanticsService.announce(
-      'Listening. Speak now.',
-      TextDirection.ltr,
-    );
+    if (context.mounted) {
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        'Listening. Speak now.',
+        TextDirection.ltr,
+      );
+    }
 
     // Simulate 2-second recording window
     await Future.delayed(const Duration(seconds: 2));
@@ -77,29 +80,38 @@ class _Step3VoiceState extends State<Step3Voice>
     _pulseCtrl.reset();
 
     setState(() => _micState = _MicTestState.prompt);
-    SemanticsService.announce(
-      'Did you hear your voice played back? '
-      'Double tap Yes or No.',
-      TextDirection.ltr,
-    );
+    if (context.mounted) {
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        'Did you hear your voice played back? '
+        'Double tap Yes or No.',
+        TextDirection.ltr,
+      );
+    }
   }
 
   void _handleYes() {
     HapticFeedback.lightImpact();
     setState(() => _micState = _MicTestState.done);
-    SemanticsService.announce(
-      'Microphone test passed.',
-      TextDirection.ltr,
-    );
+    if (context.mounted) {
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        'Microphone test passed.',
+        TextDirection.ltr,
+      );
+    }
   }
 
   void _handleNo() {
     HapticFeedback.lightImpact();
     setState(() => _micState = _MicTestState.idle);
-    SemanticsService.announce(
-      'Microphone test failed. Tap to try again.',
-      TextDirection.ltr,
-    );
+    if (context.mounted) {
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        'Microphone test failed. Tap to try again.',
+        TextDirection.ltr,
+      );
+    }
   }
 
   Color get _micBg {

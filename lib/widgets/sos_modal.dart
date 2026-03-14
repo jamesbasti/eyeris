@@ -66,13 +66,16 @@ class _SOSModalContentState extends State<_SOSModalContent> {
     // announcement from the previous screen.
     Future.delayed(const Duration(milliseconds: 350), () {
       if (!mounted) return;
-      SemanticsService.announce(
-        'Emergency SOS confirmation. '
-        'This will alert all your emergency contacts with your location. '
-        'Double tap Confirm to send SOS, or Cancel to go back.',
-        TextDirection.ltr,
-      );
-      _confirmFocus.requestFocus();
+      if (context.mounted) {
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          'Emergency SOS confirmation. '
+          'This will alert all your emergency contacts with your location. '
+          'Double tap Confirm to send SOS, or Cancel to go back.',
+          TextDirection.ltr,
+        );
+        _confirmFocus.requestFocus();
+      }
     });
   }
 
