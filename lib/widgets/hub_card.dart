@@ -94,7 +94,16 @@ class _HubCardState extends State<HubCard> {
                         ),
                         borderRadius: BorderRadius.circular(EyerisRadii.large),
                       ),
-                      child: Center(child: widget.icon),
+                      child: Center(
+                        child: SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: widget.icon,
+                          ),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: EyerisSpacing.sm),

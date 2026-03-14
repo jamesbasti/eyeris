@@ -54,9 +54,16 @@ class ScreenHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(EyerisRadii.small),
                   ),
                   child: Center(
-                    child: EyerisIcons.backArrow(
-                      size: 28,
-                      color: EyerisColors.black,
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: FittedBox(
+                        fit: BoxFit.contain,
+                        child: EyerisIcons.backArrow(
+                          size: 28,
+                          color: EyerisColors.black,
+                        ),
+                      ),
                     ),
                   ),
                 ),

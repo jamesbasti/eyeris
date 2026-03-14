@@ -186,7 +186,16 @@ class _IconBox extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(EyerisRadii.medium),
       ),
-      child: Center(child: icon),
+      child: Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: icon,
+          ),
+        ),
+      ),
     );
   }
 }
