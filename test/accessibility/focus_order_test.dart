@@ -12,6 +12,7 @@ List<({SemanticsNode node, Rect rect})> orderedButtonNodes(WidgetTester tester) 
   final result = <({SemanticsNode node, Rect rect})>[];
 
   void visit(SemanticsNode node) {
+    // ignore: deprecated_member_use
     if (node.hasFlag(SemanticsFlag.isButton) && !node.isMergedIntoParent) {
       final transform = node.transform;
       final localRect = node.rect;
@@ -26,7 +27,7 @@ List<({SemanticsNode node, Rect rect})> orderedButtonNodes(WidgetTester tester) 
     node.visitChildren((child) { visit(child); return true; });
   }
 
-  visit(tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode!);
+  visit(tester.binding.rootPipelineOwner.semanticsOwner!.rootSemanticsNode!);
 
   result.sort((a, b) {
     const threshold = 20.0;

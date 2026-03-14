@@ -10,9 +10,9 @@ double _linearise(int value) {
 }
 
 double relativeLuminance(Color color) =>
-    0.2126 * _linearise(color.red) +
-    0.7152 * _linearise(color.green) +
-    0.0722 * _linearise(color.blue);
+    0.2126 * _linearise((color.r * 255.0).round().clamp(0, 255)) +
+    0.7152 * _linearise((color.g * 255.0).round().clamp(0, 255)) +
+    0.0722 * _linearise((color.b * 255.0).round().clamp(0, 255));
 
 double contrastRatio(Color fg, Color bg) {
   final lighter = math.max(relativeLuminance(fg), relativeLuminance(bg));

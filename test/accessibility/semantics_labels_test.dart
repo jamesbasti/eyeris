@@ -14,20 +14,22 @@ import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 List<SemanticsNode> findButtonNodes(WidgetTester tester) {
   final nodes = <SemanticsNode>[];
   void visit(SemanticsNode node) {
+    // ignore: deprecated_member_use
     if (node.hasFlag(SemanticsFlag.isButton)) nodes.add(node);
     node.visitChildren((child) { visit(child); return true; });
   }
-  visit(tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode!);
+  visit(tester.binding.rootPipelineOwner.semanticsOwner!.rootSemanticsNode!);
   return nodes;
 }
 
 List<SemanticsNode> findHeaderNodes(WidgetTester tester) {
   final nodes = <SemanticsNode>[];
   void visit(SemanticsNode node) {
+    // ignore: deprecated_member_use
     if (node.hasFlag(SemanticsFlag.isHeader)) nodes.add(node);
     node.visitChildren((child) { visit(child); return true; });
   }
-  visit(tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode!);
+  visit(tester.binding.rootPipelineOwner.semanticsOwner!.rootSemanticsNode!);
   return nodes;
 }
 
@@ -72,7 +74,10 @@ void main() {
         ),
       )));
       final btns = findButtonNodes(tester);
-      final disabled = btns.where((n) => !n.hasFlag(SemanticsFlag.isEnabled));
+      final disabled = btns.where((n) {
+    // ignore: deprecated_member_use
+    return n.hasFlag(SemanticsFlag.hasEnabledState);
+  });
       expect(disabled, isNotEmpty,
           reason: 'Disabled ActionRow must mark button as not enabled');
     });

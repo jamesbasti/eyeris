@@ -84,13 +84,6 @@ class _ReadRoute extends StatelessWidget {
       onReadingSpeedTap:  () {},
       onVoiceLanguageTap: () {},
       onMicTap:           () {},
-      gestureConfig: GestureLayerConfig(
-        onBack:     () => Navigator.pop(context),
-        onVoice:    () {},
-        screenName: 'Read screen',
-        options:    ['Point and Read', 'Scan Document',
-                     'Reading Speed', 'Voice and Language'],
-      ),
     );
   }
 }
