@@ -1,26 +1,27 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/services.dart';
+import 'package:eyeris/app.dart';
 
-import 'core/app_theme.dart';
-import 'ui/splash_screen.dart';
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
 
-Future<void> main() async {
-  await dotenv.load(); // Load environment variables from .env file
+  // Lock to portrait — accessibility layouts are
+  // designed for vertical phone orientation only.
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Full-screen immersive: hide system nav bar overlay
+  // tint so the black MicBar bleeds to the edge cleanly.
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.black,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
   runApp(const EyerisApp());
-}
-
-class EyerisApp extends StatelessWidget {
-  const EyerisApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Eyeris',
-      debugShowCheckedModeBanner: false,
-      theme: buildEyerisTheme(),
-      home: const SplashScreen(), // ← swap in the new home screen
-    );
-  }
 }

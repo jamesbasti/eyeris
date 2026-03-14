@@ -44,7 +44,7 @@ class CommunicateScreen extends StatefulWidget {
     this.onBack          = _noop,
     this.onVoiceCallTap  = _noop,
     this.onMessagesTap   = _noop,
-    this.onSOSTap        = _sosDefaultTap,
+    this.onSOSTap        = sosDefaultTap,
     this.onSOSLongPress  = _noop,
     this.onMicTap        = _noop,
     this.onMicLongPress,
@@ -53,9 +53,11 @@ class CommunicateScreen extends StatefulWidget {
 
   static void _noop() {}
 
-  /// Default short-tap behaviour: announce the hold instruction
+  /// Default short-tap behaviour: announces the hold instruction
   /// so the user understands the long-press requirement.
-  static void _sosDefaultTap() {
+  /// Public so the Navigator shell can reference it without
+  /// duplicating the announcement string.
+  static void sosDefaultTap() {
     SemanticsService.sendAnnouncement(
       // Use a default view since this is a static method
       WidgetsBinding.instance.platformDispatcher.views.first,
@@ -117,7 +119,8 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
                   icon: EyerisIcons.phone(size: 22),
                   onPress: widget.onVoiceCallTap,
                   semanticsLabel:
-                      'Voice call. Access contacts and speed dial numbers.',
+                      'Voice call. Opens contacts list for calling. '
+                      'Speed dial available.',
                   semanticsHint: 'Double tap to open contacts.',
                 ),
                 const SizedBox(height: EyerisSpacing.sm),
@@ -128,7 +131,8 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
                   icon: EyerisIcons.message(size: 22),
                   onPress: widget.onMessagesTap,
                   semanticsLabel:
-                      'Messages. Read incoming messages and dictate replies.',
+                      'Messages. Reads your messages aloud and lets you '
+                      'dictate replies.',
                   semanticsHint: 'Double tap to open messages.',
                 ),
                 const SizedBox(height: EyerisSpacing.md2),
