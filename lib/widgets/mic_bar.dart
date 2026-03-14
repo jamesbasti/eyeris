@@ -177,10 +177,9 @@ class _MicButton extends StatelessWidget {
       bgColor = EyerisTheme.primary;
     }
 
-    Widget content = MicIcon(
+    Widget content = EyerisIcons.mic(
       size: 28,
       color: Colors.black,
-      strokeWidth: 2,
     );
     if (isProcessing) {
       content = SizedBox(

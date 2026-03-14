@@ -1,599 +1,780 @@
-// lib/widgets/icons/eyeris_icons.dart
-// Stroke-based icons for Eyeris. Default 26×26, color #FFD100, strokeWidth 2.
-
 import 'package:flutter/material.dart';
+import 'package:eyeris/core/app_theme.dart';
 
-import '../../core/app_theme.dart';
+// ─────────────────────────────────────────────
+// EYERIS ICON SYSTEM
+// All icons: CustomPainter, stroke-based, #FFD100 default
+// Size: 26×26 logical pixels by default
+// strokeWidth: 2.0 for outlines, 1.8 for detail
+// strokeCap: round, strokeJoin: round
+// No text inside icons — all purely geometric
+// ─────────────────────────────────────────────
 
-const double _defaultSize = 26;
-const double _defaultStroke = 2;
-
-/// Props for all Eyeris icons: size, color, strokeWidth.
-class EyerisIconProps {
-  const EyerisIconProps({
-    this.size = _defaultSize,
-    this.color = EyerisTheme.primary,
-    this.strokeWidth = _defaultStroke,
-  });
-
+class EyerisIcon extends StatelessWidget {
+  final CustomPainter painter;
   final double size;
-  final Color color;
-  final double strokeWidth;
-}
 
-/// Base painter for stroke icons. Subclasses implement [paintIcon].
-abstract class _StrokeIconPainter extends CustomPainter {
-  _StrokeIconPainter({required this.color, required this.strokeWidth});
-
-  final Color color;
-  final double strokeWidth;
-
-  void paintIcon(Canvas canvas, Size size);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    paintIcon(canvas, size);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Generic stroke icon widget.
-class _EyerisIcon extends StatelessWidget {
-  const _EyerisIcon({
-    required this.size,
-    required this.color,
-    required this.strokeWidth,
-    required this.painterBuilder,
-  });
-
-  final double size;
-  final Color color;
-  final double strokeWidth;
-  final CustomPainter Function(Color color, double strokeWidth) painterBuilder;
+  const EyerisIcon({super.key, required this.painter, this.size = 26});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        size: Size(size, size),
-        painter: painterBuilder(color, strokeWidth),
-      ),
+    return CustomPaint(
+      size: Size(size, size),
+      painter: painter,
     );
   }
 }
 
-// --- Navigation & UI ---
+Paint _stroke(Color color, double width) => Paint()
+  ..color = color
+  ..style = PaintingStyle.stroke
+  ..strokeWidth = width
+  ..strokeCap = StrokeCap.round
+  ..strokeJoin = StrokeJoin.round;
 
-class _BackArrowPainter extends _StrokeIconPainter {
-  _BackArrowPainter({required super.color, required super.strokeWidth});
+Paint _fill(Color color) => Paint()
+  ..color = color
+  ..style = PaintingStyle.fill;
+
+// ── READ ICON ─────────────────────────────────
+// Document rectangle with 3 text lines
+class _ReadPainter extends CustomPainter {
+  final Color color;
+  _ReadPainter(this.color);
 
   @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Path()
-      ..moveTo(size.width * 0.7, size.height * 0.2)
-      ..lineTo(size.width * 0.3, size.height * 0.5)
-      ..lineTo(size.width * 0.7, size.height * 0.8);
-    canvas.drawPath(p, Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round ..strokeJoin = StrokeJoin.round);
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 2.0);
+    final s = size;
+
+    // Document body
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(s.width * 0.15, s.height * 0.08,
+                    s.width * 0.70, s.height * 0.84),
+      const Radius.circular(2),
+    );
+    canvas.drawRRect(rect, p);
+
+    // Three text lines
+    final lp = _stroke(color, 1.8);
+    canvas.drawLine(Offset(s.width * 0.30, s.height * 0.38),
+                    Offset(s.width * 0.70, s.height * 0.38), lp);
+    canvas.drawLine(Offset(s.width * 0.30, s.height * 0.52),
+                    Offset(s.width * 0.70, s.height * 0.52), lp);
+    canvas.drawLine(Offset(s.width * 0.30, s.height * 0.66),
+                    Offset(s.width * 0.55, s.height * 0.66), lp);
   }
+
+  @override
+  bool shouldRepaint(_ReadPainter old) => old.color != color;
 }
 
-class BackArrowIcon extends StatelessWidget {
-  const BackArrowIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
+// ── NAVIGATE ICON ─────────────────────────────
+// Compass crosshair + center pin circle
+class _NavigatePainter extends CustomPainter {
   final Color color;
-  final double strokeWidth;
+  _NavigatePainter(this.color);
 
   @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _BackArrowPainter(color: c, strokeWidth: w));
-}
-
-class _MicPainter extends _StrokeIconPainter {
-  _MicPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    final r = Rect.fromLTWH(size.width * 0.25, size.height * 0.15, size.width * 0.5, size.height * 0.5);
-    canvas.drawRRect(RRect.fromRectAndRadius(r, const Radius.circular(8)), p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.65), Offset(size.width * 0.5, size.height * 0.85), p);
-    canvas.drawLine(Offset(size.width * 0.35, size.height * 0.85), Offset(size.width * 0.65, size.height * 0.85), p);
-  }
-}
-
-class MicIcon extends StatelessWidget {
-  const MicIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _MicPainter(color: c, strokeWidth: w));
-}
-
-class _ChevronRightPainter extends _StrokeIconPainter {
-  _ChevronRightPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Path()
-      ..moveTo(size.width * 0.35, size.height * 0.2)
-      ..lineTo(size.width * 0.75, size.height * 0.5)
-      ..lineTo(size.width * 0.35, size.height * 0.8);
-    canvas.drawPath(p, Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round ..strokeJoin = StrokeJoin.round);
-  }
-}
-
-class ChevronRightIcon extends StatelessWidget {
-  const ChevronRightIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _ChevronRightPainter(color: c, strokeWidth: w));
-}
-
-// --- Hub cards: Read, Navigate, Identify, Communicate ---
-
-class _ReadIconPainter extends _StrokeIconPainter {
-  _ReadIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    final r = Rect.fromLTWH(size.width * 0.2, size.height * 0.15, size.width * 0.6, size.height * 0.7);
-    canvas.drawRect(r, p);
-    canvas.drawLine(Offset(size.width * 0.3, size.height * 0.35), Offset(size.width * 0.7, size.height * 0.35), p);
-    canvas.drawLine(Offset(size.width * 0.3, size.height * 0.5), Offset(size.width * 0.65, size.height * 0.5), p);
-    canvas.drawLine(Offset(size.width * 0.3, size.height * 0.65), Offset(size.width * 0.55, size.height * 0.65), p);
-  }
-}
-
-class ReadIcon extends StatelessWidget {
-  const ReadIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _ReadIconPainter(color: c, strokeWidth: w));
-}
-
-class _NavigateIconPainter extends _StrokeIconPainter {
-  _NavigateIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.5), size.width * 0.35, p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.2), Offset(size.width * 0.5, size.height * 0.5), p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.5), Offset(size.width * 0.5, size.height * 0.8), p);
-    canvas.drawLine(Offset(size.width * 0.2, size.height * 0.5), Offset(size.width * 0.5, size.height * 0.5), p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.5), Offset(size.width * 0.8, size.height * 0.5), p);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.5), size.width * 0.08, p);
-  }
-}
-
-class NavigateIcon extends StatelessWidget {
-  const NavigateIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _NavigateIconPainter(color: c, strokeWidth: w));
-}
-
-class _IdentifyIconPainter extends _StrokeIconPainter {
-  _IdentifyIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    final r = Rect.fromLTWH(size.width * 0.15, size.height * 0.2, size.width * 0.7, size.height * 0.55);
-    canvas.drawRect(r, p);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.48), size.width * 0.2, p);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.48), size.width * 0.05, p);
-  }
-}
-
-class IdentifyIcon extends StatelessWidget {
-  const IdentifyIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _IdentifyIconPainter(color: c, strokeWidth: w));
-}
-
-class _CommunicateIconPainter extends _StrokeIconPainter {
-  _CommunicateIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    final r = Rect.fromLTWH(size.width * 0.2, size.height * 0.2, size.width * 0.6, size.height * 0.5);
-    canvas.drawRRect(RRect.fromRectAndRadius(r, const Radius.circular(4)), p);
-    canvas.drawLine(Offset(size.width * 0.35, size.height * 0.38), Offset(size.width * 0.65, size.height * 0.38), p);
-    canvas.drawLine(Offset(size.width * 0.35, size.height * 0.52), Offset(size.width * 0.55, size.height * 0.52), p);
-  }
-}
-
-class CommunicateIcon extends StatelessWidget {
-  const CommunicateIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _CommunicateIconPainter(color: c, strokeWidth: w));
-}
-
-// --- Read screen: Camera, Document, Clock, Voice ---
-
-class _CameraIconPainter extends _StrokeIconPainter {
-  _CameraIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    final r = Rect.fromLTWH(size.width * 0.15, size.height * 0.25, size.width * 0.7, size.height * 0.5);
-    canvas.drawRRect(RRect.fromRectAndRadius(r, const Radius.circular(6)), p);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.5), size.width * 0.18, p);
-  }
-}
-
-class CameraIcon extends StatelessWidget {
-  const CameraIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _CameraIconPainter(color: c, strokeWidth: w));
-}
-
-class DocumentIcon extends StatelessWidget {
-  const DocumentIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => ReadIcon(size: size, color: color, strokeWidth: strokeWidth);
-}
-
-class _ClockIconPainter extends _StrokeIconPainter {
-  _ClockIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.5), size.width * 0.4, p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.5), Offset(size.width * 0.5, size.height * 0.28), p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.5), Offset(size.width * 0.68, size.height * 0.5), p);
-  }
-}
-
-class ClockIcon extends StatelessWidget {
-  const ClockIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _ClockIconPainter(color: c, strokeWidth: w));
-}
-
-class VoiceIcon extends StatelessWidget {
-  const VoiceIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => CommunicateIcon(size: size, color: color, strokeWidth: strokeWidth);
-}
-
-// --- Navigate: Walk, IndoorMap, Bus ---
-
-class _WalkIconPainter extends _StrokeIconPainter {
-  _WalkIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.22), size.width * 0.12, p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.34), Offset(size.width * 0.5, size.height * 0.55), p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.55), Offset(size.width * 0.35, size.height * 0.78), p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.55), Offset(size.width * 0.65, size.height * 0.78), p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.45), Offset(size.width * 0.3, size.height * 0.5), p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.45), Offset(size.width * 0.7, size.height * 0.48), p);
-  }
-}
-
-class WalkIcon extends StatelessWidget {
-  const WalkIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _WalkIconPainter(color: c, strokeWidth: w));
-}
-
-class _IndoorMapIconPainter extends _StrokeIconPainter {
-  _IndoorMapIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    final w = size.width / 3;
-    for (int i = 0; i < 4; i++) {
-      canvas.drawLine(Offset(0, i * w), Offset(size.width, i * w), p);
-      canvas.drawLine(Offset(i * w, 0), Offset(i * w, size.height), p);
-    }
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.5), size.width * 0.08, p);
-  }
-}
-
-class IndoorMapIcon extends StatelessWidget {
-  const IndoorMapIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _IndoorMapIconPainter(color: c, strokeWidth: w));
-}
-
-class _BusIconPainter extends _StrokeIconPainter {
-  _BusIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    final r = Rect.fromLTWH(size.width * 0.1, size.height * 0.25, size.width * 0.8, size.height * 0.45);
-    canvas.drawRect(r, p);
-    canvas.drawCircle(Offset(size.width * 0.28, size.height * 0.78), size.width * 0.1, p);
-    canvas.drawCircle(Offset(size.width * 0.72, size.height * 0.78), size.width * 0.1, p);
-  }
-}
-
-class BusIcon extends StatelessWidget {
-  const BusIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _BusIconPainter(color: c, strokeWidth: w));
-}
-
-// --- Identify: Scene, Person, Color ---
-
-class SceneIcon extends StatelessWidget {
-  const SceneIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => IdentifyIcon(size: size, color: color, strokeWidth: strokeWidth);
-}
-
-class _PersonIconPainter extends _StrokeIconPainter {
-  _PersonIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.28), size.width * 0.18, p);
-    canvas.drawArc(Rect.fromLTWH(size.width * 0.2, size.height * 0.35, size.width * 0.6, size.height * 0.4), 0, 3.14159, false, p);
-  }
-}
-
-class PersonIcon extends StatelessWidget {
-  const PersonIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _PersonIconPainter(color: c, strokeWidth: w));
-}
-
-class _ColorIconPainter extends _StrokeIconPainter {
-  _ColorIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
-    final r = size.width * 0.35;
-    canvas.drawCircle(Offset(size.width * 0.35, size.height * 0.4), r, p);
-    canvas.drawCircle(Offset(size.width * 0.65, size.height * 0.4), r, p);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.7), r, p);
-  }
-}
-
-class ColorIcon extends StatelessWidget {
-  const ColorIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _ColorIconPainter(color: c, strokeWidth: w));
-}
-
-// --- Communicate: Phone, Message, Warning ---
-
-class _PhoneIconPainter extends _StrokeIconPainter {
-  _PhoneIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 2.0);
+    final s = size;
+    final cx = s.width / 2;
+    final cy = s.height * 0.44;
+
+    // Outer circle
+    canvas.drawCircle(Offset(cx, cy), s.width * 0.30, p);
+    // Center dot
+    canvas.drawCircle(Offset(cx, cy), s.width * 0.07, _fill(color));
+
+    // Crosshair ticks
+    final tp = _stroke(color, 1.8);
+    canvas.drawLine(Offset(cx, cy - s.height * 0.38),
+                    Offset(cx, cy - s.height * 0.30), tp);
+    canvas.drawLine(Offset(cx, cy + s.height * 0.30),
+                    Offset(cx, cy + s.height * 0.38), tp);
+    canvas.drawLine(Offset(cx - s.width * 0.38, cy),
+                    Offset(cx - s.width * 0.30, cy), tp);
+    canvas.drawLine(Offset(cx + s.width * 0.30, cy),
+                    Offset(cx + s.width * 0.38, cy), tp);
+
+    // Location pin drop tail
     final path = Path()
-      ..moveTo(size.width * 0.55, size.height * 0.2)
-      ..quadraticBezierTo(size.width * 0.9, size.height * 0.2, size.width * 0.9, size.height * 0.5)
-      ..quadraticBezierTo(size.width * 0.9, size.height * 0.8, size.width * 0.55, size.height * 0.8)
-      ..moveTo(size.width * 0.45, size.height * 0.2)
-      ..quadraticBezierTo(size.width * 0.1, size.height * 0.2, size.width * 0.1, size.height * 0.5)
-      ..quadraticBezierTo(size.width * 0.1, size.height * 0.8, size.width * 0.45, size.height * 0.8);
+      ..moveTo(cx - s.width * 0.10, cy + s.height * 0.30)
+      ..quadraticBezierTo(cx, cy + s.height * 0.50,
+                          cx + s.width * 0.10, cy + s.height * 0.30);
+    canvas.drawPath(path, tp);
+  }
+
+  @override
+  bool shouldRepaint(_NavigatePainter old) => old.color != color;
+}
+
+// ── IDENTIFY ICON ─────────────────────────────
+// Camera body + lens circle + center dot
+class _IdentifyPainter extends CustomPainter {
+  final Color color;
+  _IdentifyPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 2.0);
+    final s = size;
+
+    // Camera body
+    final body = RRect.fromRectAndRadius(
+      Rect.fromLTWH(s.width * 0.08, s.height * 0.24,
+                    s.width * 0.84, s.height * 0.54),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(body, p);
+
+    // Viewfinder bump
+    final path = Path()
+      ..moveTo(s.width * 0.35, s.height * 0.24)
+      ..lineTo(s.width * 0.38, s.height * 0.14)
+      ..lineTo(s.width * 0.62, s.height * 0.14)
+      ..lineTo(s.width * 0.65, s.height * 0.24);
     canvas.drawPath(path, p);
+
+    // Lens circle
+    canvas.drawCircle(Offset(s.width / 2, s.height * 0.51), s.width * 0.18, p);
+    // Center dot
+    canvas.drawCircle(Offset(s.width / 2, s.height * 0.51), s.width * 0.05, _fill(color));
   }
+
+  @override
+  bool shouldRepaint(_IdentifyPainter old) => old.color != color;
 }
 
-class PhoneIcon extends StatelessWidget {
-  const PhoneIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
+// ── COMMUNICATE ICON ──────────────────────────
+// Speech bubble + two content lines
+class _CommunicatePainter extends CustomPainter {
   final Color color;
-  final double strokeWidth;
+  _CommunicatePainter(this.color);
 
   @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _PhoneIconPainter(color: c, strokeWidth: w));
-}
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 2.0);
+    final s = size;
 
-class MessageIcon extends StatelessWidget {
-  const MessageIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => CommunicateIcon(size: size, color: color, strokeWidth: strokeWidth);
-}
-
-class _WarningIconPainter extends _StrokeIconPainter {
-  _WarningIconPainter({required super.color, required super.strokeWidth});
-
-  @override
-  void paintIcon(Canvas canvas, Size size) {
-    final p = Paint()..color = color ..style = PaintingStyle.stroke ..strokeWidth = strokeWidth ..strokeCap = StrokeCap.round;
     final path = Path()
-      ..moveTo(size.width * 0.5, size.height * 0.12)
-      ..lineTo(size.width * 0.9, size.height * 0.85)
-      ..lineTo(size.width * 0.1, size.height * 0.85)
+      ..moveTo(s.width * 0.19, s.height * 0.20)
+      ..lineTo(s.width * 0.81, s.height * 0.20)
+      ..quadraticBezierTo(s.width * 0.92, s.height * 0.20,
+                          s.width * 0.92, s.height * 0.34)
+      ..lineTo(s.width * 0.92, s.height * 0.62)
+      ..quadraticBezierTo(s.width * 0.92, s.height * 0.76,
+                          s.width * 0.78, s.height * 0.76)
+      ..lineTo(s.width * 0.36, s.height * 0.76)
+      ..lineTo(s.width * 0.15, s.height * 0.88)
+      ..lineTo(s.width * 0.19, s.height * 0.76)
+      ..quadraticBezierTo(s.width * 0.08, s.height * 0.76,
+                          s.width * 0.08, s.height * 0.62)
+      ..lineTo(s.width * 0.08, s.height * 0.34)
+      ..quadraticBezierTo(s.width * 0.08, s.height * 0.20,
+                          s.width * 0.19, s.height * 0.20)
       ..close();
     canvas.drawPath(path, p);
-    canvas.drawLine(Offset(size.width * 0.5, size.height * 0.5), Offset(size.width * 0.5, size.height * 0.6), p);
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.72), size.width * 0.04, p);
+
+    final lp = _stroke(color, 1.8);
+    canvas.drawLine(Offset(s.width * 0.28, s.height * 0.44),
+                    Offset(s.width * 0.72, s.height * 0.44), lp);
+    canvas.drawLine(Offset(s.width * 0.28, s.height * 0.57),
+                    Offset(s.width * 0.57, s.height * 0.57), lp);
   }
-}
-
-class WarningIcon extends StatelessWidget {
-  const WarningIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
 
   @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _WarningIconPainter(color: c, strokeWidth: w));
+  bool shouldRepaint(_CommunicatePainter old) => old.color != color;
 }
 
-// --- Onboarding: Vision, Touch, Switch, Mixed (stubs reusing existing) ---
-
-class VisionIcon extends StatelessWidget {
-  const VisionIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
+// ── MICROPHONE ICON ───────────────────────────
+class _MicPainter extends CustomPainter {
   final Color color;
-  final double strokeWidth;
+  _MicPainter(this.color);
 
   @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _NavigateIconPainter(color: c, strokeWidth: w));
-}
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 2.0);
+    final s = size;
+    final cx = s.width / 2;
 
-class TouchIcon extends StatelessWidget {
-  const TouchIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
+    // Mic body
+    final body = RRect.fromRectAndRadius(
+      Rect.fromLTWH(cx - s.width * 0.20, s.height * 0.10,
+                    s.width * 0.40, s.height * 0.50),
+      Radius.circular(s.width * 0.20),
+    );
+    canvas.drawRRect(body, p);
 
-  @override
-  Widget build(BuildContext context) => PersonIcon(size: size, color: color, strokeWidth: strokeWidth);
-}
+    // Arc stand
+    final arcRect = Rect.fromLTWH(s.width * 0.18, s.height * 0.32,
+                                  s.width * 0.64, s.height * 0.42);
+    canvas.drawArc(arcRect, 0, 3.14159, false, p);
 
-class SwitchIcon extends StatelessWidget {
-  const SwitchIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => _EyerisIcon(size: size, color: color, strokeWidth: strokeWidth, painterBuilder: (c, w) => _IndoorMapIconPainter(color: c, strokeWidth: w));
-}
-
-class MixedIcon extends StatelessWidget {
-  const MixedIcon({super.key, this.size = _defaultSize, this.color = EyerisTheme.primary, this.strokeWidth = _defaultStroke});
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) => ColorIcon(size: size, color: color, strokeWidth: strokeWidth);
-}
-
-// --- Dynamic icon lookup ---
-
-Widget getIcon(String name, [EyerisIconProps props = const EyerisIconProps()]) {
-  switch (name) {
-    case 'backArrow':
-      return BackArrowIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'mic':
-      return MicIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'chevronRight':
-      return ChevronRightIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'read':
-      return ReadIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'navigate':
-      return NavigateIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'identify':
-      return IdentifyIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'communicate':
-      return CommunicateIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'camera':
-      return CameraIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'document':
-      return DocumentIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'clock':
-      return ClockIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'voice':
-      return VoiceIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'walk':
-      return WalkIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'indoorMap':
-      return IndoorMapIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'bus':
-      return BusIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'scene':
-      return SceneIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'person':
-      return PersonIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'color':
-      return ColorIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'phone':
-      return PhoneIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'message':
-      return MessageIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'warning':
-      return WarningIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'vision':
-      return VisionIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'touch':
-      return TouchIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'switch':
-      return SwitchIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    case 'mixed':
-      return MixedIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
-    default:
-      return ReadIcon(size: props.size, color: props.color, strokeWidth: props.strokeWidth);
+    // Stem
+    canvas.drawLine(Offset(cx, s.height * 0.74),
+                    Offset(cx, s.height * 0.90), p);
+    // Base bar
+    canvas.drawLine(Offset(cx - s.width * 0.22, s.height * 0.90),
+                    Offset(cx + s.width * 0.22, s.height * 0.90), p);
   }
+
+  @override
+  bool shouldRepaint(_MicPainter old) => old.color != color;
+}
+
+// ── BACK ARROW ICON ───────────────────────────
+class _BackArrowPainter extends CustomPainter {
+  final Color color;
+  _BackArrowPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 2.5);
+    final s = size;
+
+    // Arrow shaft
+    canvas.drawLine(Offset(s.width * 0.75, s.height / 2),
+                    Offset(s.width * 0.25, s.height / 2), p);
+    // Arrow head
+    canvas.drawLine(Offset(s.width * 0.25, s.height / 2),
+                    Offset(s.width * 0.46, s.height * 0.30), p);
+    canvas.drawLine(Offset(s.width * 0.25, s.height / 2),
+                    Offset(s.width * 0.46, s.height * 0.70), p);
+  }
+
+  @override
+  bool shouldRepaint(_BackArrowPainter old) => old.color != color;
+}
+
+// ── PERSON ICON (profile avatar) ─────────────
+class _PersonPainter extends CustomPainter {
+  final Color color;
+  _PersonPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+    final cx = s.width / 2;
+
+    // Head
+    canvas.drawCircle(Offset(cx, s.height * 0.33), s.width * 0.20, p);
+
+    // Shoulder arc
+    final arcRect = Rect.fromLTWH(s.width * 0.12, s.height * 0.52,
+                                  s.width * 0.76, s.height * 0.52);
+    canvas.drawArc(arcRect, 3.14159, 3.14159, false, p);
+  }
+
+  @override
+  bool shouldRepaint(_PersonPainter old) => old.color != color;
+}
+
+// ── CAMERA (small — for action rows) ─────────
+class _CameraSmallPainter extends CustomPainter {
+  final Color color;
+  _CameraSmallPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+
+    final body = RRect.fromRectAndRadius(
+      Rect.fromLTWH(s.width * 0.08, s.height * 0.22,
+                    s.width * 0.84, s.height * 0.56),
+      const Radius.circular(2),
+    );
+    canvas.drawRRect(body, p);
+    canvas.drawCircle(Offset(s.width / 2, s.height * 0.50), s.width * 0.18, p);
+  }
+
+  @override
+  bool shouldRepaint(_CameraSmallPainter old) => old.color != color;
+}
+
+// ── DOCUMENT ICON ─────────────────────────────
+// Rectangle + 3 lines of varying width
+class _DocumentPainter extends CustomPainter {
+  final Color color;
+  _DocumentPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(s.width * 0.20, s.height * 0.08,
+                    s.width * 0.60, s.height * 0.84),
+      const Radius.circular(2),
+    );
+    canvas.drawRRect(rect, p);
+
+    canvas.drawLine(Offset(s.width * 0.33, s.height * 0.34),
+                    Offset(s.width * 0.67, s.height * 0.34), p);
+    canvas.drawLine(Offset(s.width * 0.33, s.height * 0.50),
+                    Offset(s.width * 0.67, s.height * 0.50), p);
+    canvas.drawLine(Offset(s.width * 0.33, s.height * 0.66),
+                    Offset(s.width * 0.55, s.height * 0.66), p);
+  }
+
+  @override
+  bool shouldRepaint(_DocumentPainter old) => old.color != color;
+}
+
+// ── CLOCK ICON ────────────────────────────────
+// Circle + hour hand + minute hand
+class _ClockPainter extends CustomPainter {
+  final Color color;
+  _ClockPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+    final cx = s.width / 2;
+    final cy = s.height / 2;
+    final r  = s.width * 0.40;
+
+    canvas.drawCircle(Offset(cx, cy), r, p);
+
+    // Hour hand (pointing ~10 o'clock)
+    canvas.drawLine(
+      Offset(cx, cy),
+      Offset(cx - r * 0.45, cy - r * 0.55),
+      p,
+    );
+    // Minute hand (pointing ~12 o'clock)
+    canvas.drawLine(
+      Offset(cx, cy),
+      Offset(cx, cy - r * 0.72),
+      p,
+    );
+    // Center dot
+    canvas.drawCircle(Offset(cx, cy), s.width * 0.04, _fill(color));
+  }
+
+  @override
+  bool shouldRepaint(_ClockPainter old) => old.color != color;
+}
+
+// ── VOICE / SPEECH ICON ───────────────────────
+// Speech bubble with sound-wave lines to the right
+class _VoicePainter extends CustomPainter {
+  final Color color;
+  _VoicePainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+
+    // Bubble body
+    final path = Path()
+      ..moveTo(s.width * 0.12, s.height * 0.18)
+      ..lineTo(s.width * 0.62, s.height * 0.18)
+      ..quadraticBezierTo(s.width * 0.72, s.height * 0.18,
+                          s.width * 0.72, s.height * 0.30)
+      ..lineTo(s.width * 0.72, s.height * 0.54)
+      ..quadraticBezierTo(s.width * 0.72, s.height * 0.66,
+                          s.width * 0.60, s.height * 0.66)
+      ..lineTo(s.width * 0.28, s.height * 0.66)
+      ..lineTo(s.width * 0.12, s.height * 0.80)
+      ..lineTo(s.width * 0.14, s.height * 0.66)
+      ..quadraticBezierTo(s.width * 0.04, s.height * 0.66,
+                          s.width * 0.04, s.height * 0.54)
+      ..lineTo(s.width * 0.04, s.height * 0.30)
+      ..quadraticBezierTo(s.width * 0.04, s.height * 0.18,
+                          s.width * 0.12, s.height * 0.18)
+      ..close();
+    canvas.drawPath(path, p);
+
+    // Sound waves (right side)
+    final wp = _stroke(color, 1.6);
+    canvas.drawArc(
+      Rect.fromLTWH(s.width * 0.74, s.height * 0.28,
+                    s.width * 0.10, s.height * 0.28),
+      -1.05, 2.10, false, wp,
+    );
+    canvas.drawArc(
+      Rect.fromLTWH(s.width * 0.82, s.height * 0.20,
+                    s.width * 0.12, s.height * 0.44),
+      -1.05, 2.10, false, wp,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_VoicePainter old) => old.color != color;
+}
+
+// ── WALK ICON ─────────────────────────────────
+// Stick figure in walking pose
+class _WalkPainter extends CustomPainter {
+  final Color color;
+  _WalkPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+    final cx = s.width * 0.52;
+
+    // Head
+    canvas.drawCircle(Offset(cx, s.height * 0.16), s.width * 0.10, p);
+    // Torso
+    canvas.drawLine(Offset(cx, s.height * 0.26),
+                    Offset(cx, s.height * 0.56), p);
+    // Left arm
+    canvas.drawLine(Offset(cx, s.height * 0.36),
+                    Offset(cx - s.width * 0.18, s.height * 0.48), p);
+    // Right arm
+    canvas.drawLine(Offset(cx, s.height * 0.36),
+                    Offset(cx + s.width * 0.14, s.height * 0.44), p);
+    // Left leg
+    canvas.drawLine(Offset(cx, s.height * 0.56),
+                    Offset(cx - s.width * 0.14, s.height * 0.78), p);
+    canvas.drawLine(Offset(cx - s.width * 0.14, s.height * 0.78),
+                    Offset(cx - s.width * 0.22, s.height * 0.90), p);
+    // Right leg
+    canvas.drawLine(Offset(cx, s.height * 0.56),
+                    Offset(cx + s.width * 0.16, s.height * 0.74), p);
+    canvas.drawLine(Offset(cx + s.width * 0.16, s.height * 0.74),
+                    Offset(cx + s.width * 0.08, s.height * 0.90), p);
+  }
+
+  @override
+  bool shouldRepaint(_WalkPainter old) => old.color != color;
+}
+
+// ── INDOOR MAP ICON ───────────────────────────
+// 3×3 dashed grid + filled center dot
+class _IndoorMapPainter extends CustomPainter {
+  final Color color;
+  _IndoorMapPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size;
+    final dashPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round;
+
+    // Outer rectangle
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(s.width * 0.10, s.height * 0.10,
+                    s.width * 0.80, s.height * 0.80),
+      const Radius.circular(2),
+    );
+    canvas.drawRRect(rect, dashPaint);
+
+    // Inner grid lines (dashed)
+    _drawDashedLine(canvas, dashPaint,
+        Offset(s.width * 0.43, s.height * 0.10),
+        Offset(s.width * 0.43, s.height * 0.90));
+    _drawDashedLine(canvas, dashPaint,
+        Offset(s.width * 0.10, s.height * 0.43),
+        Offset(s.width * 0.90, s.height * 0.43));
+
+    // Center dot
+    canvas.drawCircle(
+      Offset(s.width * 0.66, s.height * 0.66),
+      s.width * 0.08,
+      _fill(color),
+    );
+  }
+
+  void _drawDashedLine(
+    Canvas canvas,
+    Paint paint,
+    Offset start,
+    Offset end,
+  ) {
+    const dashLen = 4.0;
+    const gapLen  = 3.0;
+    final dx     = end.dx - start.dx;
+    final dy     = end.dy - start.dy;
+    final length = Offset(dx, dy).distance;
+    if (length == 0) return;
+    final unitX = dx / length;
+    final unitY = dy / length;
+    var drawn   = 0.0;
+    var drawing = true;
+    while (drawn < length) {
+      final step = drawing ? dashLen : gapLen;
+      final segLen = (drawn + step < length) ? step : length - drawn;
+      if (drawing) {
+        canvas.drawLine(
+          Offset(start.dx + unitX * drawn,       start.dy + unitY * drawn),
+          Offset(start.dx + unitX * (drawn + segLen), start.dy + unitY * (drawn + segLen)),
+          paint,
+        );
+      }
+      drawn   += segLen;
+      drawing  = !drawing;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_IndoorMapPainter old) => old.color != color;
+}
+
+// ── BUS ICON ──────────────────────────────────
+// Rectangular bus body + windows + 2 wheels
+class _BusPainter extends CustomPainter {
+  final Color color;
+  _BusPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+
+    // Body
+    final body = RRect.fromRectAndRadius(
+      Rect.fromLTWH(s.width * 0.10, s.height * 0.18,
+                    s.width * 0.80, s.height * 0.52),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(body, p);
+
+    // Windshield divider
+    canvas.drawLine(
+      Offset(s.width * 0.10, s.height * 0.36),
+      Offset(s.width * 0.90, s.height * 0.36),
+      p,
+    );
+
+    // Window 1
+    canvas.drawRect(
+      Rect.fromLTWH(s.width * 0.18, s.height * 0.22,
+                    s.width * 0.18, s.height * 0.10),
+      p,
+    );
+    // Window 2
+    canvas.drawRect(
+      Rect.fromLTWH(s.width * 0.42, s.height * 0.22,
+                    s.width * 0.18, s.height * 0.10),
+      p,
+    );
+    // Window 3
+    canvas.drawRect(
+      Rect.fromLTWH(s.width * 0.66, s.height * 0.22,
+                    s.width * 0.16, s.height * 0.10),
+      p,
+    );
+
+    // Wheel left
+    canvas.drawCircle(
+      Offset(s.width * 0.28, s.height * 0.74),
+      s.width * 0.09,
+      p,
+    );
+    // Wheel right
+    canvas.drawCircle(
+      Offset(s.width * 0.72, s.height * 0.74),
+      s.width * 0.09,
+      p,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_BusPainter old) => old.color != color;
+}
+
+// ── COLOR DETECT ICON ─────────────────────────
+// 3 overlapping circles in triangular arrangement
+class _ColorDetectPainter extends CustomPainter {
+  final Color color;
+  _ColorDetectPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+    final r = s.width * 0.22;
+
+    // Top circle
+    canvas.drawCircle(Offset(s.width * 0.50, s.height * 0.30), r, p);
+    // Bottom-left
+    canvas.drawCircle(Offset(s.width * 0.32, s.height * 0.62), r, p);
+    // Bottom-right
+    canvas.drawCircle(Offset(s.width * 0.68, s.height * 0.62), r, p);
+  }
+
+  @override
+  bool shouldRepaint(_ColorDetectPainter old) => old.color != color;
+}
+
+// ── PHONE ICON ────────────────────────────────
+// Classic curved handset
+class _PhonePainter extends CustomPainter {
+  final Color color;
+  _PhonePainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+
+    final path = Path()
+      ..moveTo(s.width * 0.18, s.height * 0.14)
+      ..lineTo(s.width * 0.38, s.height * 0.14)
+      ..lineTo(s.width * 0.46, s.height * 0.34)
+      ..lineTo(s.width * 0.36, s.height * 0.42)
+      ..quadraticBezierTo(s.width * 0.44, s.height * 0.60,
+                          s.width * 0.58, s.height * 0.64)
+      ..lineTo(s.width * 0.66, s.height * 0.54)
+      ..lineTo(s.width * 0.86, s.height * 0.62)
+      ..lineTo(s.width * 0.86, s.height * 0.82)
+      ..quadraticBezierTo(s.width * 0.56, s.height * 0.96,
+                          s.width * 0.18, s.height * 0.46)
+      ..close();
+    canvas.drawPath(path, p);
+  }
+
+  @override
+  bool shouldRepaint(_PhonePainter old) => old.color != color;
+}
+
+// ── MESSAGE ICON ──────────────────────────────
+// Rounded speech bubble with corner tail
+class _MessagePainter extends CustomPainter {
+  final Color color;
+  _MessagePainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+
+    final path = Path()
+      ..moveTo(s.width * 0.16, s.height * 0.16)
+      ..lineTo(s.width * 0.84, s.height * 0.16)
+      ..quadraticBezierTo(s.width * 0.94, s.height * 0.16,
+                          s.width * 0.94, s.height * 0.30)
+      ..lineTo(s.width * 0.94, s.height * 0.60)
+      ..quadraticBezierTo(s.width * 0.94, s.height * 0.74,
+                          s.width * 0.80, s.height * 0.74)
+      ..lineTo(s.width * 0.36, s.height * 0.74)
+      ..lineTo(s.width * 0.16, s.height * 0.88)
+      ..lineTo(s.width * 0.18, s.height * 0.74)
+      ..quadraticBezierTo(s.width * 0.06, s.height * 0.74,
+                          s.width * 0.06, s.height * 0.60)
+      ..lineTo(s.width * 0.06, s.height * 0.30)
+      ..quadraticBezierTo(s.width * 0.06, s.height * 0.16,
+                          s.width * 0.16, s.height * 0.16)
+      ..close();
+    canvas.drawPath(path, p);
+  }
+
+  @override
+  bool shouldRepaint(_MessagePainter old) => old.color != color;
+}
+
+// ── WARNING / SOS ICON ────────────────────────
+// Equilateral triangle + vertical bar + dot
+class _WarningPainter extends CustomPainter {
+  final Color color;
+  _WarningPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 1.8);
+    final s = size;
+
+    final path = Path()
+      ..moveTo(s.width * 0.50, s.height * 0.08)
+      ..lineTo(s.width * 0.92, s.height * 0.86)
+      ..lineTo(s.width * 0.08, s.height * 0.86)
+      ..close();
+    canvas.drawPath(path, p);
+
+    // Exclamation bar
+    canvas.drawLine(
+      Offset(s.width * 0.50, s.height * 0.36),
+      Offset(s.width * 0.50, s.height * 0.62),
+      p,
+    );
+    // Exclamation dot
+    canvas.drawCircle(
+      Offset(s.width * 0.50, s.height * 0.72),
+      s.width * 0.04,
+      _fill(color),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_WarningPainter old) => old.color != color;
+}
+
+// ── PUBLIC FACTORY WIDGETS ────────────────────
+// Usage: EyerisIcons.read(size: 26, color: EyerisColors.primary)
+
+class EyerisIcons {
+  EyerisIcons._();
+
+  // Hub card icons
+  static Widget read({double size = 26, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _ReadPainter(color), size: size);
+
+  static Widget navigate({double size = 26, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _NavigatePainter(color), size: size);
+
+  static Widget identify({double size = 26, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _IdentifyPainter(color), size: size);
+
+  static Widget communicate({double size = 26, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _CommunicatePainter(color), size: size);
+
+  // UI chrome icons
+  static Widget mic({double size = 28, Color color = EyerisColors.black}) =>
+      EyerisIcon(painter: _MicPainter(color), size: size);
+
+  static Widget backArrow({double size = 20, Color color = EyerisColors.black}) =>
+      EyerisIcon(painter: _BackArrowPainter(color), size: size);
+
+  static Widget person({double size = 18, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _PersonPainter(color), size: size);
+
+  // Read screen
+  static Widget camera({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _CameraSmallPainter(color), size: size);
+
+  static Widget document({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _DocumentPainter(color), size: size);
+
+  static Widget clock({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _ClockPainter(color), size: size);
+
+  static Widget voice({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _VoicePainter(color), size: size);
+
+  // Navigate screen
+  static Widget walk({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _WalkPainter(color), size: size);
+
+  static Widget indoorMap({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _IndoorMapPainter(color), size: size);
+
+  static Widget bus({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _BusPainter(color), size: size);
+
+  // Identify screen
+  static Widget colorDetect({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _ColorDetectPainter(color), size: size);
+
+  // Communicate screen
+  static Widget phone({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _PhonePainter(color), size: size);
+
+  static Widget message({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _MessagePainter(color), size: size);
+
+  static Widget warning({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _WarningPainter(color), size: size);
 }

@@ -20,7 +20,7 @@ class EyerisApp extends StatelessWidget {
       title: 'Eyeris',
       debugShowCheckedModeBanner: false,
       theme: buildEyerisTheme(),
-      home: const SplashScreen(),
+      home: const SplashScreen(), // ← swap in the new home screen
     );
   }
 }

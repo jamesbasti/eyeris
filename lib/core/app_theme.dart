@@ -106,6 +106,76 @@ class EyerisTheme {
 }
 
 // ---------------------------------------------------------------------------
+// Design token exports for backward compatibility
+// ---------------------------------------------------------------------------
+
+class EyerisColors {
+  static const Color background = EyerisTheme.background;
+  static const Color surface = EyerisTheme.surface;
+  static const Color border = EyerisTheme.border;
+  static const Color primary = EyerisTheme.primary;
+  static const Color primaryDim = EyerisTheme.primaryDim;
+  static const Color textPrimary = EyerisTheme.textPrimary;
+  static const Color textMuted = EyerisTheme.textMuted;
+  static const Color danger = EyerisTheme.danger;
+  static const Color white = EyerisTheme.white;
+  static const Color black = Color(0xFF000000);
+  static const Color borderFocus = EyerisTheme.border;
+}
+
+class EyerisSpacing {
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double md2 = 16;
+  static const double lg = 16;
+  static const double xl = 20;
+  static const double xxl = 24;
+  static const double xxxl = 32;
+  static const double huge = 40;
+  static const double massive = 48;
+  static const double gigantic = 64;
+  static const double enormous = 80;
+  static const double base = 8;
+}
+
+class EyerisText {
+  static const TextStyle xs = TextStyle(fontSize: 9, fontFamily: EyerisTheme.fontFamily);
+  static const TextStyle sm = TextStyle(fontSize: 11, fontFamily: EyerisTheme.fontFamily);
+  static const TextStyle md = TextStyle(fontSize: 13, fontFamily: EyerisTheme.fontFamily);
+  static const TextStyle lg = TextStyle(fontSize: 15, fontFamily: EyerisTheme.fontFamily);
+  static const TextStyle xl = TextStyle(fontSize: 18, fontFamily: EyerisTheme.fontFamily);
+  static const TextStyle xxl = TextStyle(fontSize: 22, fontFamily: EyerisTheme.fontFamily);
+  static const TextStyle rowLabel = TextStyle(fontSize: 15, fontFamily: EyerisTheme.fontFamily, fontWeight: FontWeight.w600);
+  static const TextStyle rowSub = TextStyle(fontSize: 11, fontFamily: EyerisTheme.fontFamily, color: EyerisTheme.textMuted);
+  static const TextStyle sectionLabel = TextStyle(fontSize: 13, fontFamily: EyerisTheme.fontFamily, fontWeight: FontWeight.w700, letterSpacing: 0.78);
+}
+
+class EyerisBorders {
+  static const double thin = EyerisTheme.borderThin;
+  static const double normal = EyerisTheme.borderNormal;
+  static const double thick = EyerisTheme.borderThick;
+  static const double focus = EyerisTheme.borderFocus;
+  static const double card = 1;
+}
+
+class EyerisRadii {
+  static const double small = EyerisTheme.radiusSmall;
+  static const double medium = EyerisTheme.radiusMedium;
+  static const double large = EyerisTheme.radiusLarge;
+  static const double full = EyerisTheme.radiusFull;
+  static const double card = 12;
+}
+
+class EyerisTouchTargets {
+  static const double hubCard = EyerisTheme.touchHubCard;
+  static const double actionRow = EyerisTheme.touchActionRow;
+  static const double primaryButton = EyerisTheme.touchPrimaryButton;
+  static const double backButton = EyerisTheme.touchBackButton;
+  static const double minTap = EyerisTheme.touchMinTap;
+}
+
+// ---------------------------------------------------------------------------
 // 2. Typography helper — use UPPERCASE for all labels
 // ---------------------------------------------------------------------------
 
