@@ -15,10 +15,11 @@ import '../../config/api_config.dart';
 
 class NaturalVoiceService {
   static final AudioPlayer _audioPlayer = AudioPlayer();
-  
+
   // Rachel voice ID from ElevenLabs pre-made voices
   static const String _rachelVoiceId = '21m00Tcm4TlvDq8ikWAM';
 
+  
   /// Speaks text using ElevenLabs natural voice API.
   /// Throws on failure so callers can fall back to device TTS.
   static Future<void> speakWithNaturalVoice(String text) async {
@@ -55,6 +56,9 @@ class NaturalVoiceService {
     final tempDir = await getTemporaryDirectory();
     final audioFile = File('${tempDir.path}/natural_voice.mp3');
     await audioFile.writeAsBytes(speechResponse.bodyBytes);
+
+    // Reset player to clean state before playback
+    await _audioPlayer.stop();
 
     // Use a Completer so both natural completion and manual stop resolve it
     final completer = Completer<void>();

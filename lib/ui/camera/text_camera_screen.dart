@@ -61,6 +61,32 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
     await _flutterTts.setLanguage('en-US');
     await _flutterTts.setSpeechRate(0.45);
     await _flutterTts.setPitch(1.0);
+
+    if (Platform.isIOS) {
+      try {
+        // Set Evan enhanced voice using the display name
+        await _flutterTts.setVoice({
+          'name': 'Evan (Enhanced)',
+          'locale': 'en-US'
+        });
+      } catch (e) {
+        // Voice setting failed, will use default
+      }
+    } else if (Platform.isAndroid) {
+      try {
+        final engines = await _flutterTts.getEngines as List;
+        final google = engines.firstWhere(
+          (e) => e.toString().toLowerCase().contains('google'),
+          orElse: () => '',
+        );
+        if (google.toString().isNotEmpty) {
+          await _flutterTts.setEngine(google.toString());
+        }
+      } catch (e) {
+        // Engine selection failed, will use default
+      }
+    }
+
     _flutterTts.setCompletionHandler(() {
       if (mounted && _scanState == _ScanState.speaking) {
         setState(() => _scanState = _ScanState.idle);
@@ -207,22 +233,23 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
       if (enhancedText.isNotEmpty) {
         developer.log('Starting TTS for: "${enhancedText.length > 50 ? enhancedText.substring(0, 50) : enhancedText}..."');
         if (mounted) setState(() => _scanState = _ScanState.speaking);
-        bool spokePrimary = false;
-        if (NaturalVoiceService.isApiKeyConfigured()) {
-          try {
-            developer.log('Using ElevenLabs natural voice');
-            await NaturalVoiceService.speakWithNaturalVoice(enhancedText);
-            spokePrimary = true;
-            if (mounted) setState(() => _scanState = _ScanState.idle);
-          } catch (e) {
-            developer.log('ElevenLabs failed, falling back to Flutter TTS: $e');
-          }
-        }
-        if (!spokePrimary) {
-          developer.log('Using Flutter TTS');
+        // ElevenLabs disabled - no subscription
+        // if (NaturalVoiceService.isApiKeyConfigured()) {
+        //   try {
+        //     developer.log('Attempting ElevenLabs with new API key...');
+        //     await NaturalVoiceService.speakWithNaturalVoice(enhancedText);
+        //     spokePrimary = true;
+        //     developer.log('ElevenLabs playback completed successfully');
+        //     if (mounted) setState(() => _scanState = _ScanState.idle);
+        //   } catch (e) {
+        //     developer.log('ElevenLabs failed: $e');
+        //     developer.log('Falling back to Flutter TTS with Evan (enhanced)');
+        //   }
+        // }
+        // if (!spokePrimary) {
           await _flutterTts.speak(enhancedText);
           // completion handler resets state to idle
-        }
+        // }
         developer.log('TTS completed');
       } else {
         developer.log('Warning: enhancedText is empty, skipping TTS');
