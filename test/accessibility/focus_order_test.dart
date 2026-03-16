@@ -3,10 +3,10 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/ui/home_screen.dart';
-import 'package:eyeris/ui/read_screen.dart';
-import 'package:eyeris/ui/navigate_screen.dart';
-import 'package:eyeris/ui/identify_screen.dart';
-import 'package:eyeris/ui/communicate_screen.dart';
+import 'package:eyeris/ui/dashboard/read_screen.dart';
+import 'package:eyeris/ui/dashboard/navigate_screen.dart';
+import 'package:eyeris/ui/dashboard/identify_screen.dart';
+import 'package:eyeris/ui/dashboard/communicate_screen.dart';
 
 List<({SemanticsNode node, Rect rect})> orderedButtonNodes(WidgetTester tester) {
   final result = <({SemanticsNode node, Rect rect})>[];

@@ -3,13 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/core/routes.dart';
 import 'package:eyeris/ui/home_screen.dart';
-import 'package:eyeris/ui/read_screen.dart';
-import 'package:eyeris/ui/navigate_screen.dart';
-import 'package:eyeris/ui/identify_screen.dart';
-import 'package:eyeris/ui/communicate_screen.dart';
+import 'package:eyeris/ui/dashboard/read_screen.dart';
+import 'package:eyeris/ui/dashboard/navigate_screen.dart';
+import 'package:eyeris/ui/dashboard/identify_screen.dart';
+import 'package:eyeris/ui/dashboard/communicate_screen.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
 import 'package:eyeris/widgets/gesture_navigation.dart';
-import 'package:eyeris/ui/color_detect_screen.dart';
+import 'package:eyeris/ui/camera/color_detect_camera_screen.dart';
+import 'package:eyeris/ui/camera/scene_describe_camera_screen.dart';
 import 'package:eyeris/widgets/sos_modal.dart';
 
 class EyerisApp extends StatelessWidget {
@@ -47,6 +48,8 @@ class EyerisApp extends StatelessWidget {
         return const _OnboardingRoute();
       case EyerisRoutes.colorDetect:
         return const _ColorDetectRoute();
+      case EyerisRoutes.sceneDescribe:
+        return const _SceneDescribeRoute();
       default:
         return const _HomeRoute();
     }
@@ -119,7 +122,7 @@ class _IdentifyRoute extends StatelessWidget {
   Widget build(BuildContext context) {
     return IdentifyScreen(
       onBack:             () => Navigator.pop(context),
-      onSceneDescribeTap: () {},
+      onSceneDescribeTap: () => Navigator.pushNamed(context, EyerisRoutes.sceneDescribe),
       onFindPersonTap:    () {},
       onColorDetectTap:   () => Navigator.pushNamed(context, EyerisRoutes.colorDetect),
       onMicTap:           () {},
@@ -138,7 +141,18 @@ class _ColorDetectRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColorDetectScreen(
+    return ColorDetectCameraScreen(
+      onBack: () => Navigator.pop(context),
+    );
+  }
+}
+
+class _SceneDescribeRoute extends StatelessWidget {
+  const _SceneDescribeRoute();
+
+  @override
+  Widget build(BuildContext context) {
+    return SceneDescribeCameraScreen(
       onBack: () => Navigator.pop(context),
     );
   }

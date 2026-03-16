@@ -12,5 +12,6 @@ class EyerisRoutes {
   static const String identify    = '/identify';
   static const String communicate = '/communicate';
   static const String onboarding  = '/onboarding';
-  static const String colorDetect = '/colorDetect';
+  static const String colorDetect    = '/colorDetect';
+  static const String sceneDescribe  = '/sceneDescribe';
 }

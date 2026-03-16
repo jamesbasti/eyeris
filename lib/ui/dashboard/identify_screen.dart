@@ -22,8 +22,8 @@ import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 //       ActionRow: Color Detect
 //   MicBar  "SAY 'DESCRIBE THIS'"
 //
-// Note: "Scene Describe" will push to CameraScreen
-// in the functionality pass (Phase 5).
+// Note: "Scene Describe" pushes to SceneDescribeCameraScreen
+// "Color Detect" pushes to ColorDetectCameraScreen
 // ─────────────────────────────────────────────
 
 class IdentifyScreen extends StatefulWidget {

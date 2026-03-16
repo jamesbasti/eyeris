@@ -8,37 +8,38 @@ import 'package:eyeris/services/color_service.dart';
 import 'package:eyeris/services/openai_service.dart';
 
 // ─────────────────────────────────────────────
-// COLOR DETECT SCREEN
+// COLOR DETECT CAMERA SCREEN
 //
 // Tap-to-detect colour identification.
-// User sees live camera preview with a centre
-// crosshair, taps "Detect" to sample the colour,
-// then hears the result spoken aloud via TTS
-// with an AI-enhanced description.
+// User sees live camera preview, taps "Detect"
+// to sample the colour, then hears the result
+// spoken aloud via TTS with an AI-enhanced
+// description.
 // ─────────────────────────────────────────────
 
 enum _DetectState { idle, detecting, result }
 
-class ColorDetectScreen extends StatefulWidget {
+
+class ColorDetectCameraScreen extends StatefulWidget {
   final VoidCallback onBack;
 
-  const ColorDetectScreen({
+  const ColorDetectCameraScreen({
     super.key,
     required this.onBack,
   });
 
   @override
-  State<ColorDetectScreen> createState() => _ColorDetectScreenState();
+  State<ColorDetectCameraScreen> createState() => _ColorDetectCameraScreenState();
 }
 
-class _ColorDetectScreenState extends State<ColorDetectScreen> {
+class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
   CameraController? _cameraController;
   bool _cameraReady = false;
 
   _DetectState _state = _DetectState.idle;
   ColorResult? _result;
   String _aiDescription = '';
-  bool _flashOn = false;
+  bool _torchOn = false;
 
   final FlutterTts _tts = FlutterTts();
   final OpenAIService _openAI = OpenAIService();
@@ -147,15 +148,16 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
     super.dispose();
   }
 
-  Future<void> _toggleFlash() async {
+  Future<void> _toggleTorch() async {
     if (_cameraController == null || !_cameraReady) return;
     try {
-      final next = _flashOn ? FlashMode.off : FlashMode.torch;
-      await _cameraController!.setFlashMode(next);
+      await _cameraController!.setFlashMode(
+        _torchOn ? FlashMode.off : FlashMode.torch,
+      );
       if (!mounted) return;
-      setState(() => _flashOn = !_flashOn);
+      setState(() => _torchOn = !_torchOn);
     } catch (e) {
-      debugPrint('ColorDetect: flash toggle error — $e');
+      debugPrint('ColorDetect: torch toggle error — $e');
     }
   }
 
@@ -287,28 +289,24 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
             ),
           ),
 
-          // Flash toggle button
+          // Torch toggle button
           Semantics(
-            label: _flashOn ? 'Flash on. Double tap to turn off.' : 'Flash off. Double tap to turn on.',
-            hint: 'Toggles camera flash for better colour detection in low light',
+            label: _torchOn ? 'Torch on. Tap to turn off.' : 'Torch off. Tap to turn on.',
             button: true,
             child: GestureDetector(
-              onTap: _toggleFlash,
+              onTap: _toggleTorch,
               child: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: _flashOn ? EyerisColors.primary : EyerisTheme.surface,
+                  color: _torchOn ? EyerisColors.primary : EyerisTheme.surface,
                   borderRadius: BorderRadius.circular(EyerisRadii.small),
-                  border: Border.all(
-                    color: EyerisColors.primary,
-                    width: 2,
-                  ),
+                  border: Border.all(color: EyerisColors.primary, width: 2),
                 ),
                 child: Center(
                   child: Icon(
-                    _flashOn ? Icons.flash_on : Icons.flash_off,
-                    color: _flashOn ? EyerisColors.black : EyerisColors.primary,
+                    _torchOn ? Icons.flashlight_on : Icons.flashlight_off,
+                    color: _torchOn ? EyerisColors.black : EyerisColors.primary,
                     size: 20,
                   ),
                 ),
@@ -408,7 +406,7 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
           onTap: isDetecting ? null : _detectColor,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
-            height: EyerisTouchTargets.primaryButton,
+            height: 88,
             decoration: BoxDecoration(
               color: isDetecting ? EyerisColors.primaryDim : EyerisColors.primary,
               borderRadius: BorderRadius.circular(EyerisRadii.medium),
@@ -427,7 +425,7 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
                     'DETECT COLOUR',
                     style: TextStyle(
                       fontFamily: 'monospace',
-                      fontSize: 15,
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: EyerisColors.black,
                       letterSpacing: 1.6,

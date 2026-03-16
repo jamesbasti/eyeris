@@ -2,7 +2,7 @@
 //
 // Text camera screen for OCR functionality
 // Used by Read screen for "Point and Read" feature
-// Provides live camera preview with text recognition
+// UI styled after ColorDetectScreen for visual consistency
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../services/vision/text_recognition_service.dart';
 import '../../services/vision/text_enhancement_service.dart';
 import '../../services/voice/natural_voice_service.dart';
@@ -19,32 +20,10 @@ import 'dart:io';
 
 // ─────────────────────────────────────────────
 // TEXT CAMERA SCREEN — OCR Text-to-Speech Reader
-//
-// Accessibility-first redesign:
-//
-//   Layout (top → bottom):
-//     ScreenHeader  : back button (44px) + "DESCRIBE" title
-//     CameraPreview : fills all remaining space
-//     TextPanel     : large-text OCR result (min 3 lines)
-//     ScanButton    : full-width, 88px, yellow — primary action
-//
-//   States:
-//     idle      → "Point camera at text and tap SCAN"
-//     scanning  → "Analysing text…" + spinner
-//     speaking  → enhanced text + speaking indicator
-//     error     → error message in danger colour
-//
-//   Touch targets:
-//     Back button : 44 × 44 px (WCAG floor)
-//     Scan button : full width × 88 px
-//     Stop button : full width × 64 px (shown while speaking)
-//
-//   Screen reader:
-//     Scan button label updates per state
-//     Result text announces via SemanticsService on change
 // ─────────────────────────────────────────────
 
 enum _ScanState { idle, scanning, speaking, error }
+
 
 class TextCameraScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -61,22 +40,20 @@ class TextCameraScreen extends StatefulWidget {
 }
 
 class _TextCameraScreenState extends State<TextCameraScreen> {
-  // ── Camera
   CameraController? _cameraController;
-  bool _isCameraInitialized = false;
-  bool _isFlashOn = false;
+  bool _cameraReady = false;
+  bool _torchOn = false;
   _ScanState _scanState = _ScanState.idle;
   String _resultText = 'Point camera at text and tap SCAN.';
   String _errorText = '';
 
-  // ── OCR / AI / TTS
   final FlutterTts _flutterTts = FlutterTts();
 
   @override
   void initState() {
     super.initState();
     _initTts();
-    _initializeCamera();
+    _initCamera();
   }
 
   // ── TTS Initialization
@@ -92,21 +69,32 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
   }
 
   // ── Camera Initialization
-  Future<void> _initializeCamera() async {
+  Future<void> _initCamera() async {
+    final status = await Permission.camera.request();
+    if (!mounted) return;
+    if (status.isDenied || status.isPermanentlyDenied) {
+      debugPrint('TextCamera: camera permission denied');
+      return;
+    }
+
     try {
       final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+
       final back = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.back,
         orElse: () => cameras.first,
       );
+
       _cameraController = CameraController(
         back,
         ResolutionPreset.high,
         enableAudio: false,
       );
+
       await _cameraController!.initialize();
       if (!mounted) return;
-      setState(() => _isCameraInitialized = true);
+      setState(() => _cameraReady = true);
     } catch (e) {
       developer.log('Camera init error: $e');
       if (mounted) {
@@ -118,24 +106,17 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
     }
   }
 
-  // ── Flash Toggle
-  Future<void> _toggleFlash() async {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) {
-      return;
-    }
-
+  // ── Torch Toggle
+  Future<void> _toggleTorch() async {
+    if (_cameraController == null || !_cameraReady) return;
     try {
-      if (_isFlashOn) {
-        await _cameraController!.setFlashMode(FlashMode.off);
-        setState(() => _isFlashOn = false);
-        developer.log('Flash turned OFF');
-      } else {
-        await _cameraController!.setFlashMode(FlashMode.always);
-        setState(() => _isFlashOn = true);
-        developer.log('Flash turned ON');
-      }
+      await _cameraController!.setFlashMode(
+        _torchOn ? FlashMode.off : FlashMode.torch,
+      );
+      if (!mounted) return;
+      setState(() => _torchOn = !_torchOn);
     } catch (e) {
-      developer.log('Flash toggle error: $e');
+      developer.log('Torch toggle error: $e');
     }
   }
 
@@ -225,17 +206,24 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
       // Speak the enhanced text
       if (enhancedText.isNotEmpty) {
         developer.log('Starting TTS for: "${enhancedText.length > 50 ? enhancedText.substring(0, 50) : enhancedText}..."');
+        if (mounted) setState(() => _scanState = _ScanState.speaking);
+        bool spokePrimary = false;
         if (NaturalVoiceService.isApiKeyConfigured()) {
-          developer.log('Using ElevenLabs natural voice');
-          await NaturalVoiceService.speakWithNaturalVoice(enhancedText);
-        } else {
-          developer.log('Using Flutter TTS fallback');
+          try {
+            developer.log('Using ElevenLabs natural voice');
+            await NaturalVoiceService.speakWithNaturalVoice(enhancedText);
+            spokePrimary = true;
+            if (mounted) setState(() => _scanState = _ScanState.idle);
+          } catch (e) {
+            developer.log('ElevenLabs failed, falling back to Flutter TTS: $e');
+          }
+        }
+        if (!spokePrimary) {
+          developer.log('Using Flutter TTS');
           await _flutterTts.speak(enhancedText);
+          // completion handler resets state to idle
         }
-        if (mounted) {
-          developer.log('TTS started successfully');
-          setState(() => _scanState = _ScanState.speaking);
-        }
+        developer.log('TTS completed');
       } else {
         developer.log('Warning: enhancedText is empty, skipping TTS');
       }
@@ -288,6 +276,7 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
 
   @override
   void dispose() {
+    _cameraController?.setFlashMode(FlashMode.off).catchError((_) {});
     _cameraController?.dispose();
     _flutterTts.stop();
     NaturalVoiceService.stop();
@@ -295,7 +284,7 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
     super.dispose();
   }
 
-  // ── UI ────────────────────────────────────────
+  // ── Build ──────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -303,46 +292,48 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
       backgroundColor: EyerisColors.background,
       body: Column(
         children: [
-          // ── Top chrome
           SafeArea(
             bottom: false,
             child: _buildHeader(),
           ),
 
-          // ── Camera preview
-          Expanded(
-            child: _buildCameraArea(),
-          ),
+          // Camera preview
+          Expanded(child: _buildCameraArea()),
 
-          // ── Result panel + action button
-          _buildBottomPanel(),
+          // Result card (scrollable text)
+          _buildResultCard(),
 
-          // ── System nav area
-          SizedBox(height: MediaQuery.of(context).padding.bottom),
+          // Action button
+          _scanState == _ScanState.speaking
+              ? _buildStopButton()
+              : _buildScanButton(),
+
+          const SizedBox(height: EyerisSpacing.md),
         ],
       ),
     );
   }
 
-  // ── Screen header — back + title
+  // ── Header — matches ColorDetectScreen style
   Widget _buildHeader() {
     return Container(
-      decoration: const BoxDecoration(
-        color: EyerisColors.black,
-        border: Border(
-          bottom: BorderSide(color: EyerisColors.primary, width: 3),
-        ),
-      ),
       padding: const EdgeInsets.symmetric(
-        horizontal: EyerisSpacing.lg,
+        horizontal: EyerisSpacing.md2,
         vertical: EyerisSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: EyerisColors.border,
+            width: EyerisBorders.header,
+          ),
+        ),
       ),
       child: Row(
         children: [
-          // Back button — 44×44, yellow fill
+          // Back button
           Semantics(
-            label: 'Go back',
-            hint: 'Returns to Read screen',
+            label: 'Back',
             button: true,
             child: GestureDetector(
               onTap: () {
@@ -375,145 +366,78 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
             child: Semantics(
               header: true,
               child: Text(
-                'DESCRIBE',
+                'POINT & READ',
                 style: EyerisText.screenTitle,
               ),
             ),
           ),
 
-          // Flash toggle button
+          // Torch toggle button
           Semantics(
-            label: _isFlashOn ? 'Flash on. Double tap to turn off.' : 'Flash off. Double tap to turn on.',
-            hint: 'Toggles camera flash for better text recognition in low light',
+            label: _torchOn ? 'Torch on. Tap to turn off.' : 'Torch off. Tap to turn on.',
             button: true,
             child: GestureDetector(
-              onTap: _toggleFlash,
+              onTap: _toggleTorch,
               child: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: _isFlashOn ? EyerisColors.primary : EyerisTheme.surface,
+                  color: _torchOn ? EyerisColors.primary : EyerisTheme.surface,
                   borderRadius: BorderRadius.circular(EyerisRadii.small),
-                  border: Border.all(
-                    color: EyerisColors.primary,
-                    width: 2,
-                  ),
+                  border: Border.all(color: EyerisColors.primary, width: 2),
                 ),
                 child: Center(
                   child: Icon(
-                    _isFlashOn ? Icons.flash_on : Icons.flash_off,
-                    color: _isFlashOn ? EyerisColors.black : EyerisColors.primary,
+                    _torchOn ? Icons.flashlight_on : Icons.flashlight_off,
+                    color: _torchOn ? EyerisColors.black : EyerisColors.primary,
                     size: 20,
                   ),
                 ),
               ),
             ),
           ),
-
-          const SizedBox(width: EyerisSpacing.sm),
-
-          // State badge — visible indicator of current mode
-          _buildStateBadge(),
         ],
       ),
     );
   }
 
-  Widget _buildStateBadge() {
-    String label;
-    Color color;
-
-    switch (_scanState) {
-      case _ScanState.scanning:
-        label = 'SCANNING';
-        color = EyerisColors.primary;
-      case _ScanState.speaking:
-        label = 'SPEAKING';
-        color = EyerisColors.primary;
-      case _ScanState.error:
-        label = 'ERROR';
-        color = EyerisColors.danger;
-      case _ScanState.idle:
-        return const SizedBox.shrink();
-    }
-
-    return ExcludeSemantics(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          border: Border.all(color: color, width: 1.5),
-          borderRadius: BorderRadius.circular(EyerisRadii.small),
-        ),
-        child: Text(
-          label,
-          style: EyerisText.mono(
-            size: 9,
-            letterSpacing: 0.12,
-            color: color,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Camera preview area
+  // ── Camera preview area — matches ColorDetectScreen style
   Widget _buildCameraArea() {
-    if (_scanState == _ScanState.error && !_isCameraInitialized) {
+    if (_scanState == _ScanState.error && !_cameraReady) {
       return _buildErrorState();
     }
 
-    if (!_isCameraInitialized || _cameraController == null) {
-      return _buildLoadingState();
-    }
-
-    return Stack(
-      children: [
-        // Camera preview
-        CameraPreview(_cameraController!),
-
-        // Scanning overlay — removed yellow border
-        if (_scanState == _ScanState.scanning)
-          const SizedBox.shrink(),
-      ],
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Container(
-      color: EyerisColors.background,
-      child: Center(
+    if (!_cameraReady || _cameraController == null) {
+      return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
-              width: 48,
-              height: 48,
-              child: CircularProgressIndicator(
-                color: EyerisColors.primary,
-                strokeWidth: 3,
-              ),
-            ),
-            const SizedBox(height: EyerisSpacing.base),
+            CircularProgressIndicator(color: EyerisColors.primary),
+            SizedBox(height: EyerisSpacing.md),
             Text(
-              'STARTING CAMERA',
-              style: EyerisText.mono(
-                size: 11,
-                letterSpacing: 0.12,
+              'INITIALISING CAMERA',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
                 color: EyerisColors.textMuted,
+                letterSpacing: 1.2,
               ),
             ),
           ],
         ),
-      ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(EyerisRadii.medium),
+      child: CameraPreview(_cameraController!),
     );
   }
 
   Widget _buildErrorState() {
-    return Container(
-      color: EyerisColors.background,
-      padding: const EdgeInsets.all(EyerisSpacing.xl),
-      child: Center(
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(EyerisSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -521,12 +445,11 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
             const SizedBox(height: EyerisSpacing.base),
             Text(
               _errorText,
-              style: EyerisText.mono(
-                size: 15,
-                weight: FontWeight.w400,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 15,
                 color: EyerisColors.textPrimary,
-                letterSpacing: 0.03,
-                height: 1.7,
+                height: 1.4,
               ),
               textAlign: TextAlign.center,
             ),
@@ -536,44 +459,14 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
     );
   }
 
-  // ── Bottom panel — result text + action button
-  Widget _buildBottomPanel() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: EyerisColors.black,
-        border: Border(
-          top: BorderSide(color: EyerisColors.primary, width: 3),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Result text panel
-          _buildResultPanel(),
+  // ── Result card — scrollable text, matches ColorDetectScreen card style
+  Widget _buildResultCard() {
+    final isPlaceholder = _scanState == _ScanState.idle &&
+        _resultText.contains('Point camera');
 
-          // Action button(s)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              EyerisSpacing.md2,
-              0,
-              EyerisSpacing.md2,
-              EyerisSpacing.md2,
-            ),
-            child: _scanState == _ScanState.speaking
-                ? _buildStopButton()
-                : _buildScanButton(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultPanel() {
     final textColor = _scanState == _ScanState.error
         ? EyerisColors.danger
-        : (_scanState == _ScanState.idle && _resultText.contains('Point camera')
-            ? EyerisColors.textMuted
-            : EyerisColors.textPrimary);
+        : (isPlaceholder ? EyerisColors.textMuted : EyerisColors.textPrimary);
 
     return Semantics(
       label: _resultText,
@@ -581,11 +474,20 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
         width: double.infinity,
         constraints: const BoxConstraints(
           minHeight: 80,
-          maxHeight: 150,
+          maxHeight: 160,
         ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: EyerisSpacing.base,
-          vertical: EyerisSpacing.md,
+        margin: const EdgeInsets.symmetric(
+          horizontal: EyerisSpacing.md2,
+          vertical: EyerisSpacing.sm,
+        ),
+        padding: const EdgeInsets.all(EyerisSpacing.md2),
+        decoration: BoxDecoration(
+          color: EyerisColors.surface,
+          border: Border.all(
+            color: EyerisColors.border,
+            width: EyerisBorders.card,
+          ),
+          borderRadius: BorderRadius.circular(EyerisRadii.card),
         ),
         child: SingleChildScrollView(
           child: Row(
@@ -604,15 +506,30 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
                   ),
                 ),
 
+              // Scanning spinner
+              if (_scanState == _ScanState.scanning)
+                const Padding(
+                  padding: EdgeInsets.only(right: 10, top: 2),
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: EyerisColors.primary,
+                    ),
+                  ),
+                ),
+
               Expanded(
                 child: Text(
                   _resultText,
-                  style: EyerisText.mono(
-                    size: 15,
-                    weight: FontWeight.w400,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
                     color: textColor,
-                    letterSpacing: 0.03,
-                    height: 1.7,
+                    height: 1.5,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ),
@@ -623,66 +540,53 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
     );
   }
 
-  // Primary action: SCAN — full width, 88px
+  // ── Scan button — matches ColorDetectScreen detect button style
   Widget _buildScanButton() {
     final isScanning = _scanState == _ScanState.scanning;
 
-    return Semantics(
-      label: isScanning
-          ? 'Scanning text. Please wait.'
-          : 'Scan. Double tap to read text from camera.',
-      button: true,
-      enabled: !isScanning,
-      child: GestureDetector(
-        onTap: () {
-          developer.log('*** BUTTON TAPPED ***');
-          if (isScanning) {
-            developer.log('Button disabled - currently scanning');
-            return;
-          }
-          developer.log('Button enabled - calling _captureAndRecognizeText');
-          _captureAndRecognizeText();
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
-          width: double.infinity,
-          height: 88,
-          decoration: BoxDecoration(
-            color: isScanning
-                ? EyerisColors.primaryDim
-                : EyerisColors.primary,
-            borderRadius: BorderRadius.circular(EyerisRadii.card),
-          ),
-          child: Center(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: EyerisSpacing.md2),
+      child: Semantics(
+        label: isScanning
+            ? 'Scanning text. Please wait.'
+            : 'Scan. Double tap to read text from camera.',
+        button: true,
+        enabled: !isScanning,
+        child: GestureDetector(
+          onTap: () {
+            developer.log('*** BUTTON TAPPED ***');
+            if (isScanning) {
+              developer.log('Button disabled - currently scanning');
+              return;
+            }
+            developer.log('Button enabled - calling _captureAndRecognizeText');
+            _captureAndRecognizeText();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            height: 88,
+            decoration: BoxDecoration(
+              color: isScanning ? EyerisColors.primaryDim : EyerisColors.primary,
+              borderRadius: BorderRadius.circular(EyerisRadii.medium),
+            ),
+            alignment: Alignment.center,
             child: isScanning
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: EyerisColors.black,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'SCANNING…',
-                        style: EyerisText.mono(
-                          size: 16,
-                          letterSpacing: 0.12,
-                          color: EyerisColors.black,
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(
-                    'SCAN',
-                    style: EyerisText.mono(
-                      size: 20,
-                      letterSpacing: 0.14,
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
                       color: EyerisColors.black,
+                    ),
+                  )
+                : const Text(
+                    'SCAN TEXT',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: EyerisColors.black,
+                      letterSpacing: 1.6,
                     ),
                   ),
           ),
@@ -691,100 +595,46 @@ class _TextCameraScreenState extends State<TextCameraScreen> {
     );
   }
 
-  // Secondary action: STOP — shown while TTS is speaking
+  // ── Stop button — shown while TTS is speaking
   Widget _buildStopButton() {
-    return Semantics(
-      label: 'Stop speaking. Double tap to stop reading.',
-      button: true,
-      child: GestureDetector(
-        onTap: _stopSpeaking,
-        child: Container(
-          width: double.infinity,
-          height: 64,
-          decoration: BoxDecoration(
-            color: EyerisColors.surface,
-            border: Border.all(
-              color: EyerisColors.primary,
-              width: EyerisBorders.card,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: EyerisSpacing.md2),
+      child: Semantics(
+        label: 'Stop speaking. Double tap to stop reading.',
+        button: true,
+        child: GestureDetector(
+          onTap: _stopSpeaking,
+          child: Container(
+            height: 88,
+            decoration: BoxDecoration(
+              color: EyerisColors.surface,
+              border: Border.all(
+                color: EyerisColors.primary,
+                width: EyerisBorders.card,
+              ),
+              borderRadius: BorderRadius.circular(EyerisRadii.medium),
             ),
-            borderRadius: BorderRadius.circular(EyerisRadii.card),
-          ),
-          child: Center(
-            child: Row(
+            alignment: Alignment.center,
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ExcludeSemantics(
-                  child: Icon(
-                    Icons.stop_rounded,
-                    color: EyerisColors.primary,
-                    size: 24,
-                  ),
+                Icon(
+                  Icons.stop_rounded,
+                  color: EyerisColors.primary,
+                  size: 24,
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Text(
                   'STOP',
-                  style: EyerisText.mono(
-                    size: 16,
-                    letterSpacing: 0.12,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                     color: EyerisColors.primary,
+                    letterSpacing: 1.6,
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// SCANNING OVERLAY
-// Pulsing yellow border over the camera preview
-// when a scan is in progress.
-// ─────────────────────────────────────────────
-
-class _ScanningOverlay extends StatefulWidget {
-  const _ScanningOverlay();
-
-  @override
-  State<_ScanningOverlay> createState() => _ScanningOverlayState();
-}
-
-class _ScanningOverlayState extends State<_ScanningOverlay>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, _) => ExcludeSemantics(
-        child: Container(
-          margin: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: EyerisColors.primary.withValues(alpha: _anim.value),
-              width: 4,
             ),
           ),
         ),
