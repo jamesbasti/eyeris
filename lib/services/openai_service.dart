@@ -101,4 +101,70 @@ Generate a spoken description right now.
       return 'Error generating description: $e';
     }
   }
+
+  /// Returns a rich, spoken-style colour description for accessibility.
+  /// Falls back to [colorName] if the API key is missing or the request fails.
+  Future<String> describeColor({
+    required String colorName,
+    required String hex,
+  }) async {
+    final apiKey = dotenv.env['OPENAI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      return colorName;
+    }
+
+    final prompt = '''
+The user is blind or has low vision. They pointed their phone camera at something and the detected colour is "$colorName" (hex $hex).
+
+Give a single, natural-sounding sentence that:
+- Names the colour in plain language.
+- Adds a brief, vivid comparison so the user can imagine it (e.g. "like a clear summer sky" or "similar to dark chocolate").
+- Is concise — no more than 15 words.
+- Does NOT start with "The colour is" or "This is".
+''';
+
+    const url = 'https://api.openai.com/v1/chat/completions';
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $apiKey',
+    };
+    final body = jsonEncode(<String, Object>{
+      'model': 'gpt-4.1-mini',
+      'messages': <Map<String, String>>[
+        <String, String>{
+          'role': 'system',
+          'content':
+              'You are a concise colour-description assistant for blind users. '
+              'Respond with exactly one short sentence.',
+        },
+        <String, String>{
+          'role': 'user',
+          'content': prompt,
+        },
+      ],
+      'max_tokens': 40,
+      'temperature': 0.7,
+    });
+
+    try {
+      final response =
+          await http.post(Uri.parse(url), headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final choices = data['choices'] as List<dynamic>?;
+        if (choices != null && choices.isNotEmpty) {
+          final message = (choices.first as Map<String, dynamic>)['message']
+              as Map<String, dynamic>?;
+          final content = message?['content'] as String?;
+          if (content != null && content.trim().isNotEmpty) {
+            return content.trim();
+          }
+        }
+      }
+      return colorName;
+    } catch (_) {
+      return colorName;
+    }
+  }
 }

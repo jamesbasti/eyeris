@@ -1,23 +1,34 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:eyeris/app.dart';
 
 void main() async {
+  debugPrint('=== Eyeris App Starting ===');
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables for API keys
-  await dotenv.load(fileName: ".env");
+  // Catch all Flutter framework errors and print them
+  FlutterError.onError = (FlutterErrorDetails details) {
+    debugPrint('>>> FLUTTER ERROR <<<');
+    debugPrint('Exception: ${details.exception}');
+    debugPrint('Stack: ${details.stack}');
+    debugPrint('Library: ${details.library}');
+    debugPrint('Context: ${details.context}');
+  };
 
-  // Lock to portrait — accessibility layouts are
-  // designed for vertical phone orientation only.
+  // Load .env (OpenAI key etc.)
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    debugPrint('Warning: .env file not found or invalid');
+  }
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Full-screen immersive: hide system nav bar overlay
-  // tint so the black MicBar bleeds to the edge cleanly.
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -27,5 +38,12 @@ void main() async {
     ),
   );
 
-  runApp(const EyerisApp());
+  // Catch async errors too
+  runZonedGuarded(() {
+    runApp(const EyerisApp());
+  }, (error, stack) {
+    debugPrint('>>> ZONE ERROR <<<');
+    debugPrint('Error: $error');
+    debugPrint('Stack: $stack');
+  });
 }

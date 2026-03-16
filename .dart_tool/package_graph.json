@@ -52,7 +52,7 @@
     },
     {
       "name": "audioplayers",
-      "version": "5.2.1",
+      "version": "6.6.0",
       "dependencies": [
         "audioplayers_android",
         "audioplayers_darwin",
@@ -250,7 +250,7 @@
     },
     {
       "name": "matcher",
-      "version": "0.12.17",
+      "version": "0.12.18",
       "dependencies": [
         "async",
         "meta",
@@ -261,7 +261,7 @@
     },
     {
       "name": "test_api",
-      "version": "0.7.7",
+      "version": "0.7.9",
       "dependencies": [
         "async",
         "boolean_selector",
@@ -297,7 +297,7 @@
     },
     {
       "name": "audioplayers_windows",
-      "version": "3.1.0",
+      "version": "4.3.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -305,18 +305,19 @@
     },
     {
       "name": "audioplayers_web",
-      "version": "4.1.0",
+      "version": "5.2.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter",
         "flutter_web_plugins",
-        "js"
+        "web"
       ]
     },
     {
       "name": "audioplayers_platform_interface",
-      "version": "6.1.0",
+      "version": "7.1.1",
       "dependencies": [
+        "collection",
         "flutter",
         "meta",
         "plugin_platform_interface"
@@ -324,7 +325,7 @@
     },
     {
       "name": "audioplayers_linux",
-      "version": "3.1.0",
+      "version": "4.2.1",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -332,7 +333,7 @@
     },
     {
       "name": "audioplayers_darwin",
-      "version": "5.0.2",
+      "version": "6.4.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -340,7 +341,7 @@
     },
     {
       "name": "audioplayers_android",
-      "version": "4.0.3",
+      "version": "5.2.1",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -657,14 +658,14 @@
     },
     {
       "name": "material_color_utilities",
-      "version": "0.11.1",
+      "version": "0.13.0",
       "dependencies": [
         "collection"
       ]
     },
     {
       "name": "characters",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "dependencies": []
     },
     {
@@ -720,13 +721,6 @@
       "name": "fixnum",
       "version": "1.1.1",
       "dependencies": []
-    },
-    {
-      "name": "js",
-      "version": "0.6.7",
-      "dependencies": [
-        "meta"
-      ]
     },
     {
       "name": "platform",

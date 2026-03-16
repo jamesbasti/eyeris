@@ -9,6 +9,7 @@ import 'package:eyeris/ui/identify_screen.dart';
 import 'package:eyeris/ui/communicate_screen.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
 import 'package:eyeris/widgets/gesture_navigation.dart';
+import 'package:eyeris/ui/color_detect_screen.dart';
 import 'package:eyeris/widgets/sos_modal.dart';
 
 class EyerisApp extends StatelessWidget {
@@ -44,6 +45,8 @@ class EyerisApp extends StatelessWidget {
         return const _CommunicateRoute();
       case EyerisRoutes.onboarding:
         return const _OnboardingRoute();
+      case EyerisRoutes.colorDetect:
+        return const _ColorDetectRoute();
       default:
         return const _HomeRoute();
     }
@@ -118,7 +121,7 @@ class _IdentifyRoute extends StatelessWidget {
       onBack:             () => Navigator.pop(context),
       onSceneDescribeTap: () {},
       onFindPersonTap:    () {},
-      onColorDetectTap:   () {},
+      onColorDetectTap:   () => Navigator.pushNamed(context, EyerisRoutes.colorDetect),
       onMicTap:           () {},
       gestureConfig: GestureLayerConfig(
         onBack:     () => Navigator.pop(context),
@@ -126,6 +129,17 @@ class _IdentifyRoute extends StatelessWidget {
         screenName: 'Identify screen',
         options:    ['Scene Describe', 'Find Person', 'Color Detect'],
       ),
+    );
+  }
+}
+
+class _ColorDetectRoute extends StatelessWidget {
+  const _ColorDetectRoute();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColorDetectScreen(
+      onBack: () => Navigator.pop(context),
     );
   }
 }
