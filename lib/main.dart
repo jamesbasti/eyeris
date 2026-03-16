@@ -6,40 +6,42 @@ import 'package:eyeris/app.dart';
 
 void main() async {
   debugPrint('=== Eyeris App Starting ===');
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Catch all Flutter framework errors and print them
-  FlutterError.onError = (FlutterErrorDetails details) {
-    debugPrint('>>> FLUTTER ERROR <<<');
-    debugPrint('Exception: ${details.exception}');
-    debugPrint('Stack: ${details.stack}');
-    debugPrint('Library: ${details.library}');
-    debugPrint('Context: ${details.context}');
-  };
-
-  // Load .env (OpenAI key etc.)
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (e) {
-    debugPrint('Warning: .env file not found or invalid');
-  }
-
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.black,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
-
+  
   // Catch async errors too
-  runZonedGuarded(() {
+  runZonedGuarded(() async {
+    // Initialize Flutter bindings in the same zone as runApp
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Catch all Flutter framework errors and print them
+    FlutterError.onError = (FlutterErrorDetails details) {
+      debugPrint('>>> FLUTTER ERROR <<<');
+      debugPrint('Exception: ${details.exception}');
+      debugPrint('Stack: ${details.stack}');
+      debugPrint('Library: ${details.library}');
+      debugPrint('Context: ${details.context}');
+    };
+
+    // Load .env (OpenAI key etc.)
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (e) {
+      debugPrint('Warning: .env file not found or invalid');
+    }
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+
     runApp(const EyerisApp());
   }, (error, stack) {
     debugPrint('>>> ZONE ERROR <<<');
