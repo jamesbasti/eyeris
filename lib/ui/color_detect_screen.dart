@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:eyeris/core/app_theme.dart';
+import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 import 'package:eyeris/services/color_service.dart';
 import 'package:eyeris/services/openai_service.dart';
 
@@ -351,23 +352,32 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
   Widget _buildImageArea() {
     if (_colorSource == _ColorSource.camera) {
       if (!_cameraReady || _cameraController == null) {
-        return const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(color: EyerisColors.primary),
-              SizedBox(height: EyerisSpacing.md),
-              Text(
-                'INITIALISING CAMERA',
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  color: EyerisColors.textMuted,
-                  letterSpacing: 1.2,
-                ),
+        return Stack(
+          children: [
+            const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: EyerisColors.primary),
+                  SizedBox(height: EyerisSpacing.md),
+                  Text(
+                    'INITIALISING CAMERA',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: EyerisColors.textMuted,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Positioned(
+              bottom: 16,
+              left: 16,
+              child: _buildImageUploadButton(),
+            ),
+          ],
         );
       }
 
@@ -383,10 +393,10 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
         // Centre crosshair overlay
         _buildCrosshair(),
 
-        // Image upload button overlay
+        // Image upload button overlay (bottom left)
         Positioned(
-          top: 16,
-          right: 16,
+          bottom: 16,
+          left: 16,
           child: _buildImageUploadButton(),
         ),
       ],
@@ -581,6 +591,10 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
               ),
             ),
 
+          // Spacing between buttons
+          if (_colorSource == _ColorSource.camera)
+            const SizedBox(width: EyerisSpacing.sm),
+
           // Image upload / camera toggle button
           if (_colorSource == _ColorSource.camera)
             Semantics(
@@ -601,8 +615,7 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
                     ),
                   ),
                   child: Center(
-                    child: Icon(
-                      Icons.photo_library,
+                    child: EyerisIcons.imageUpload(
                       color: EyerisColors.primary,
                       size: 20,
                     ),

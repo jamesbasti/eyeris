@@ -777,4 +777,50 @@ class EyerisIcons {
 
   static Widget warning({double size = 22, Color color = EyerisColors.primary}) =>
       EyerisIcon(painter: _WarningPainter(color), size: size);
+
+  static Widget imageUpload({double size = 22, Color color = EyerisColors.primary}) =>
+      EyerisIcon(painter: _ImageUploadPainter(color), size: size);
+}
+
+// ── IMAGE UPLOAD ICON ───────────────────────────────
+// Upload arrow pointing up into a cloud
+class _ImageUploadPainter extends CustomPainter {
+  final Color color;
+  _ImageUploadPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _stroke(color, 2.0);
+    final s = size;
+
+    // Cloud shape (simplified)
+    final cloudPath = Path()
+      ..addOval(Rect.fromCenter(center: Offset(s.width * 0.5, s.height * 0.35), width: s.width * 0.6, height: s.height * 0.25))
+      ..addOval(Rect.fromCenter(center: Offset(s.width * 0.3, s.height * 0.35), width: s.width * 0.35, height: s.height * 0.25))
+      ..addOval(Rect.fromCenter(center: Offset(s.width * 0.7, s.height * 0.35), width: s.width * 0.35, height: s.height * 0.25))
+      ..addOval(Rect.fromCenter(center: Offset(s.width * 0.5, s.height * 0.25), width: s.width * 0.5, height: s.height * 0.2));
+
+    // Draw cloud outline
+    canvas.drawPath(cloudPath, p);
+
+    // Upload arrow
+    final arrowPath = Path()
+      ..moveTo(s.width * 0.5, s.height * 0.55)  // Arrow tip
+      ..lineTo(s.width * 0.4, s.height * 0.65)  // Left arm
+      ..moveTo(s.width * 0.5, s.height * 0.55)  // Back to tip
+      ..lineTo(s.width * 0.6, s.height * 0.65); // Right arm
+
+    // Draw arrow
+    canvas.drawPath(arrowPath, p);
+
+    // Arrow shaft
+    canvas.drawLine(
+      Offset(s.width * 0.5, s.height * 0.55),
+      Offset(s.width * 0.5, s.height * 0.75),
+      p,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
