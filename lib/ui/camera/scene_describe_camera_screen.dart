@@ -576,9 +576,15 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
       );
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(EyerisRadii.medium),
-      child: CameraPreview(_cameraController!),
+    return Padding(
+      padding: const EdgeInsets.all(EyerisSpacing.md2),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(EyerisRadii.medium),
+        child: AspectRatio(
+          aspectRatio: _cameraController!.value.aspectRatio,
+          child: CameraPreview(_cameraController!),
+        ),
+      ),
     );
   }
 
