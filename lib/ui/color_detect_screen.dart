@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:eyeris/core/app_theme.dart';
-import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 import 'package:eyeris/services/color_service.dart';
 import 'package:eyeris/services/openai_service.dart';
 
@@ -22,7 +18,6 @@ import 'package:eyeris/services/openai_service.dart';
 // ─────────────────────────────────────────────
 
 enum _DetectState { idle, detecting, result }
-enum _ColorSource { camera, image }
 
 class ColorDetectScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -44,18 +39,13 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
   ColorResult? _result;
   String _aiDescription = '';
   bool _flashOn = false;
-  _ColorSource _colorSource = _ColorSource.camera;
 
   final FlutterTts _tts = FlutterTts();
   final OpenAIService _openAI = OpenAIService();
   final ColorService _colorService = ColorService.instance;
-  final ImagePicker _imagePicker = ImagePicker();
 
   // Keep the latest camera image for on-demand sampling
   CameraImage? _latestImage;
-  File? _selectedImage;
-  ui.Image? _uploadedImageData;
-  Offset? _eyedropperPosition;
 
   @override
   void initState() {
@@ -174,151 +164,6 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
-      
-      if (image != null) {
-        final file = File(image.path);
-        final bytes = await file.readAsBytes();
-        final codec = await ui.instantiateImageCodec(bytes);
-        final frame = await codec.getNextFrame();
-        final uiImage = frame.image;
-        
-        setState(() {
-          _selectedImage = file;
-          _uploadedImageData = uiImage;
-          _colorSource = _ColorSource.image;
-          _result = null;
-          _aiDescription = '';
-          _state = _DetectState.idle;
-        });
-      }
-    } catch (e) {
-      debugPrint('ColorDetect: image pick error — $e');
-    }
-  }
-
-  Future<void> _detectColorFromImage(Offset position) async {
-    if (_uploadedImageData == null || _state == _DetectState.detecting) return;
-
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _state = _DetectState.detecting;
-      _result = null;
-      _aiDescription = '';
-      _eyedropperPosition = position;
-    });
-
-    try {
-      // Convert position to image coordinates
-      final imageSize = _uploadedImageData!.width;
-      final imageHeight = _uploadedImageData!.height;
-      
-      // Get pixel data at the tapped position
-      final byteData = await _uploadedImageData!.toByteData(format: ui.ImageByteFormat.rawRgba);
-      if (byteData == null) {
-        setState(() => _state = _DetectState.idle);
-        return;
-      }
-
-      final x = (position.dx * imageSize).round();
-      final y = (position.dy * imageHeight).round();
-      
-      // Calculate pixel index (4 bytes per pixel: RGBA)
-      final pixelIndex = (y * imageSize + x) * 4;
-      
-      if (pixelIndex < byteData.lengthInBytes - 3) {
-        final r = byteData.getUint8(pixelIndex);
-        final g = byteData.getUint8(pixelIndex + 1);
-        final b = byteData.getUint8(pixelIndex + 2);
-        
-        final color = Color.fromARGB(255, r, g, b);
-        final colorResult = _colorService.analyzeColor(color);
-        
-        if (colorResult != null && mounted) {
-          setState(() => _result = colorResult);
-
-          // Speak basic name immediately
-          await _tts.stop();
-          await _tts.speak(colorResult.name);
-
-          // Fetch AI-enhanced description
-          debugPrint('ColorDetect: Calling AI for "${colorResult.name}" (${colorResult.hex})');
-          final description = await _openAI.describeColor(
-            colorName: colorResult.name,
-            hex: colorResult.hex,
-          );
-          debugPrint('ColorDetect: AI returned: "$description"');
-
-          if (!mounted) return;
-          setState(() {
-            _aiDescription = description;
-            _state = _DetectState.result;
-          });
-
-          // Speak AI description if different
-          if (description != colorResult.name) {
-            debugPrint('ColorDetect: Speaking AI description');
-            await _tts.speak(description);
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('ColorDetect: image color detection error — $e');
-      if (mounted) {
-        setState(() => _state = _DetectState.idle);
-      }
-    }
-  }
-
-  void _switchToCamera() {
-    setState(() {
-      _colorSource = _ColorSource.camera;
-      _selectedImage = null;
-      _uploadedImageData = null;
-      _eyedropperPosition = null;
-      _result = null;
-      _aiDescription = '';
-      _state = _DetectState.idle;
-    });
-  }
-
-  Widget _buildImageUploadButton() {
-    return Semantics(
-      label: 'Upload image. Double tap to select an image from gallery for color detection.',
-      hint: 'Switch to image upload mode',
-      button: true,
-      child: GestureDetector(
-        onTap: _pickImage,
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(EyerisRadii.medium),
-            border: Border.all(
-              color: EyerisColors.primary,
-              width: 2,
-            ),
-          ),
-          child: Center(
-            child: Icon(
-              Icons.photo_library,
-              color: EyerisColors.primary,
-              size: 24,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   // ── Build ──────────────────────────────────
 
   @override
@@ -332,16 +177,14 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
             child: _buildHeader(),
           ),
 
-          // Camera preview or uploaded image with crosshair
-          Expanded(child: _buildImageArea()),
+          // Camera preview with crosshair
+          Expanded(child: _buildCameraArea()),
 
           // Result card
           if (_result != null) _buildResultCard(),
 
-          // Detect button or eyedropper area
-          _colorSource == _ColorSource.camera 
-              ? _buildDetectButton()
-              : _buildEyedropperArea(),
+          // Detect button
+          _buildDetectButton(),
 
           const SizedBox(height: EyerisSpacing.md),
         ],
@@ -349,153 +192,41 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
     );
   }
 
-  Widget _buildImageArea() {
-    if (_colorSource == _ColorSource.camera) {
-      if (!_cameraReady || _cameraController == null) {
-        return Stack(
+  Widget _buildCameraArea() {
+    if (!_cameraReady || _cameraController == null) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(color: EyerisColors.primary),
-                  SizedBox(height: EyerisSpacing.md),
-                  Text(
-                    'INITIALISING CAMERA',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      color: EyerisColors.textMuted,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
+            CircularProgressIndicator(color: EyerisColors.primary),
+            SizedBox(height: EyerisSpacing.md),
+            Text(
+              'INITIALISING CAMERA',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: EyerisColors.textMuted,
+                letterSpacing: 1.2,
               ),
-            ),
-            Positioned(
-              bottom: 16,
-              left: 16,
-              child: _buildImageUploadButton(),
             ),
           ],
-        );
-      }
-
-      return Stack(
-        alignment: Alignment.center,
-        children: [
-          // Camera preview
-          ClipRRect(
-            borderRadius: BorderRadius.circular(EyerisRadii.medium),
-            child: CameraPreview(_cameraController!),
-          ),
-
-        // Centre crosshair overlay
-        _buildCrosshair(),
-
-        // Image upload button overlay (bottom left)
-        Positioned(
-          bottom: 16,
-          left: 16,
-          child: _buildImageUploadButton(),
         ),
-      ],
-    );
-    } else {
-      // Image upload mode
-      if (_uploadedImageData == null) {
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.image,
-                size: 64,
-                color: EyerisColors.textMuted,
-              ),
-              const SizedBox(height: EyerisSpacing.md),
-              Text(
-                'No image selected',
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 14,
-                  color: EyerisColors.textMuted,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: EyerisSpacing.lg),
-              ElevatedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.photo_library),
-                label: const Text('Select Image'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: EyerisColors.primary,
-                  foregroundColor: EyerisColors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: EyerisSpacing.lg,
-                    vertical: EyerisSpacing.md,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      }
-
-      return GestureDetector(
-        onTapDown: (details) {
-          final RenderBox box = context.findRenderObject() as RenderBox;
-          final localPosition = box.globalToLocal(details.globalPosition);
-          final relativePosition = Offset(
-            localPosition.dx / box.size.width,
-            localPosition.dy / box.size.height,
-          );
-          _detectColorFromImage(relativePosition);
-        },
-        child: Stack(
-          children: [
-            // Display uploaded image
-            Center(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 3.0,
-                child: Image.file(
-                  _selectedImage!,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-          
-          // Eyedropper cursor indicator
-          if (_eyedropperPosition != null)
-            Positioned(
-              left: _eyedropperPosition!.dx * MediaQuery.of(context).size.width - 10,
-              top: _eyedropperPosition!.dy * (MediaQuery.of(context).size.height - 200) - 10, // Approximate image area
-              child: IgnorePointer(
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: EyerisColors.primary, width: 2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: EyerisColors.primary,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
       );
     }
+
+    return Padding(
+      padding: const EdgeInsets.all(EyerisSpacing.md2),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(EyerisRadii.medium),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            CameraPreview(_cameraController!),
+            _buildCrosshair(),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildCrosshair() {
@@ -561,8 +292,7 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
             ),
           ),
 
-          // Flash toggle button (camera mode only)
-          if (_colorSource == _ColorSource.camera)
+          // Flash toggle button
             Semantics(
               label: _flashOn ? 'Flash on. Double tap to turn off.' : 'Flash off. Double tap to turn on.',
               hint: 'Toggles camera flash for better colour detection in low light',
@@ -584,69 +314,6 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
                     child: Icon(
                       _flashOn ? Icons.flash_on : Icons.flash_off,
                       color: _flashOn ? EyerisColors.black : EyerisColors.primary,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          // Spacing between buttons
-          if (_colorSource == _ColorSource.camera)
-            const SizedBox(width: EyerisSpacing.sm),
-
-          // Image upload / camera toggle button
-          if (_colorSource == _ColorSource.camera)
-            Semantics(
-              label: 'Upload image. Double tap to select an image from gallery.',
-              hint: 'Switch to image upload mode for color detection',
-              button: true,
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: EyerisTheme.surface,
-                    borderRadius: BorderRadius.circular(EyerisRadii.small),
-                    border: Border.all(
-                      color: EyerisColors.primary,
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: EyerisIcons.imageUpload(
-                      color: EyerisColors.primary,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          // Switch back to camera button (image mode only)
-          if (_colorSource == _ColorSource.image)
-            Semantics(
-              label: 'Switch to camera. Double tap to use camera for color detection.',
-              hint: 'Switch back to camera mode',
-              button: true,
-              child: GestureDetector(
-                onTap: _switchToCamera,
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: EyerisTheme.surface,
-                    borderRadius: BorderRadius.circular(EyerisRadii.small),
-                    border: Border.all(
-                      color: EyerisColors.primary,
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: EyerisColors.primary,
                       size: 20,
                     ),
                   ),
@@ -773,57 +440,6 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
                   ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildEyedropperArea() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: EyerisSpacing.md2),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            height: EyerisTouchTargets.primaryButton,
-            decoration: BoxDecoration(
-              color: EyerisColors.primary,
-              borderRadius: BorderRadius.circular(EyerisRadii.medium),
-            ),
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.colorize,
-                  color: EyerisColors.black,
-                  size: 20,
-                ),
-                const SizedBox(width: EyerisSpacing.sm),
-                Text(
-                  'Tap Image to Pick Color',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: EyerisColors.black,
-                    letterSpacing: 1.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: EyerisSpacing.sm),
-          Text(
-            'Tap anywhere on the image to detect the color at that point',
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 12,
-              color: EyerisColors.textMuted,
-              letterSpacing: 1.0,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
       ),
     );
   }
