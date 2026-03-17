@@ -137,17 +137,14 @@ void main() {
   });
 
   group('SceneDescribeScreen semantics', () {
-    testWidgets('>=3 labelled buttons, all descriptive', (tester) async {
+    testWidgets('>=2 labelled buttons, all descriptive', (tester) async {
       await tester.pumpWidget(eyerisApp(SceneDescribeScreen(
         onBack: () {},
-        onWalkModeTap: () {},
-        onIndoorMapTap: () {},
-        onNearestBusTap: () {},
         onMicTap: () {},
       )));
       await tester.pump();
       final btns = findButtonNodes(tester).where((n) => n.label.isNotEmpty).toList();
-      expect(btns.length, greaterThanOrEqualTo(3));
+      expect(btns.length, greaterThanOrEqualTo(2));
       for (final b in btns) {
         expect(isDescriptive(b.label), isTrue, reason: '"${b.label}" not descriptive');
       }

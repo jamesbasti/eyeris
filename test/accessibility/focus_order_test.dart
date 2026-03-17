@@ -90,9 +90,6 @@ void main() {
     testWidgets('back button is first focusable element', (tester) async {
       await tester.pumpWidget(eyerisApp(SceneDescribeScreen(
         onBack: () {},
-        onWalkModeTap: () {},
-        onIndoorMapTap: () {},
-        onNearestBusTap: () {},
         onMicTap: () {},
       )));
       await tester.pump();
@@ -106,9 +103,6 @@ void main() {
     testWidgets('no empty labels', (tester) async {
       await tester.pumpWidget(eyerisApp(SceneDescribeScreen(
         onBack: () {},
-        onWalkModeTap: () {},
-        onIndoorMapTap: () {},
-        onNearestBusTap: () {},
         onMicTap: () {},
       )));
       await tester.pump();

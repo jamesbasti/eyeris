@@ -52,18 +52,6 @@ class Step2Interaction extends StatelessWidget {
       sublabel: 'Speak commands, minimal tapping',
       icon: EyerisIcons.voice(size: 22),
     ),
-    InteractionOption(
-      id: 'switch_access',
-      label: 'SWITCH ACCESS',
-      sublabel: 'I use an external switch device',
-      icon: EyerisIcons.communicate(size: 22),
-    ),
-    InteractionOption(
-      id: 'mixed',
-      label: 'MIXED',
-      sublabel: 'I use a combination of methods',
-      icon: EyerisIcons.navigate(size: 22),
-    ),
   ];
 
   @override

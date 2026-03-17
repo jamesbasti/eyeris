@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/widgets/mic_bar.dart';
 import 'package:eyeris/widgets/screen_header.dart';
 import 'package:eyeris/ui/camera/text_camera_screen.dart';
+import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
+import 'package:eyeris/services/voice_service.dart';
 import 'dart:developer' as developer;
 
 // ─────────────────────────────────────────────
@@ -35,6 +36,7 @@ class ReadScreen extends StatefulWidget {
   final VoidCallback onMicTap;
   final VoidCallback? onMicLongPress;
   final MicBarState micState;
+  final OnboardingProfile? profile;
 
   const ReadScreen({
     super.key,
@@ -46,6 +48,7 @@ class ReadScreen extends StatefulWidget {
     this.onMicTap           = _noop,
     this.onMicLongPress,
     this.micState           = MicBarState.idle,
+    this.profile,
   });
 
   static void _noop() {}
@@ -55,13 +58,12 @@ class ReadScreen extends StatefulWidget {
 }
 
 class _ReadScreenState extends State<ReadScreen> {
-  final FlutterTts _flutterTts = FlutterTts();
   bool _showTextCamera = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeTts();
+    _initializeVoiceService();
     // Go directly to camera after initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) {
@@ -77,68 +79,15 @@ class _ReadScreenState extends State<ReadScreen> {
     });
   }
 
-  Future<void> _initializeTts() async {
-    await _flutterTts.setLanguage('en-US');
-    await _flutterTts.setSpeechRate(0.5); // Slower for better accessibility
-    await _flutterTts.setVolume(1.0);
-    await _flutterTts.setPitch(1.0);
-    
-    // Get available voices and choose best one
-    final voices = await _flutterTts.getVoices;
-    developer.log('Available voices count: ${voices.length}');
-    
-    // Try to find a more natural voice
-    String selectedVoice = '';
-    for (var voice in voices) {
-      // Check if voice is a Map or has name property
-      String voiceName = '';
-      if (voice is Map) {
-        voiceName = voice['name']?.toString() ?? '';
-      } else {
-        voiceName = voice.name?.toString() ?? '';
-      }
-      
-      developer.log('Checking voice: "$voiceName"');
-      
-      if (voiceName.toLowerCase().contains('samantha') || 
-          voiceName.toLowerCase().contains('alex') ||
-          voiceName.toLowerCase().contains('daniel') ||
-          voiceName.toLowerCase().contains('karen')) {
-        selectedVoice = voiceName;
-        break;
-      }
-    }
-    
-    // If no specific voice found, use the first available
-    if (selectedVoice.isEmpty && voices.isNotEmpty) {
-      final firstVoice = voices.first;
-      if (firstVoice is Map) {
-        selectedVoice = firstVoice['name']?.toString() ?? '';
-      } else {
-        selectedVoice = firstVoice.name?.toString() ?? '';
-      }
-    }
-    
-    if (selectedVoice.isNotEmpty) {
-      await _flutterTts.setVoice({"name": selectedVoice, "locale": "en-US"});
-      developer.log('Using voice: $selectedVoice');
-    }
-    
-    // Add speech completion handler
-    _flutterTts.setCompletionHandler(() {
-      // Speech completed - you can add logic here if needed
-    });
-    
-    // Add error handler
-    _flutterTts.setErrorHandler((msg) {
-      developer.log('TTS Error: $msg');
-    });
+  Future<void> _initializeVoiceService() async {
+    await VoiceService.instance.initialize(profile: widget.profile);
+    developer.log('VoiceService initialized in ReadScreen');
   }
 
   
   void _onTextCameraBack() {
     // Stop any ongoing speech when going back
-    _flutterTts.stop();
+    VoiceService.instance.stop();
     widget.onBack();
   }
 

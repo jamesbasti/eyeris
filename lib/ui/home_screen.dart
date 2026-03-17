@@ -6,6 +6,9 @@ import 'package:eyeris/widgets/mic_bar.dart';
 import 'package:eyeris/widgets/profile_avatar.dart' as profile;
 import 'package:eyeris/widgets/screen_header.dart';
 import 'package:eyeris/widgets/icons/eyeris_icons.dart';
+import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
+import 'package:eyeris/ui/profile_screen.dart';
+import 'package:eyeris/services/profile_notifier.dart';
 
 // ─────────────────────────────────────────────
 // HOME SCREEN
@@ -30,6 +33,8 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onMicTap;
   final VoidCallback? onMicLongPress;
   final MicBarState micState;
+  final OnboardingProfile? profile;
+  final ValueChanged<OnboardingProfile>? onProfileChanged;
 
   const HomeScreen({
     super.key,
@@ -41,6 +46,8 @@ class HomeScreen extends StatefulWidget {
     this.onMicTap = _noop,
     this.onMicLongPress,
     this.micState = MicBarState.idle,
+    this.profile,
+    this.onProfileChanged,
   });
 
   static void _noop() {}
@@ -50,9 +57,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  OnboardingProfile? _currentProfile;
+
   @override
   void initState() {
     super.initState();
+    _currentProfile = widget.profile;
+    
+    // Listen to profile changes from global notifier
+    profileNotifier.addListener(_onProfileChanged);
+    
     // Announce screen on mount for TalkBack / VoiceOver
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) {
@@ -63,6 +77,53 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     });
+  }
+
+  @override
+  void dispose() {
+    profileNotifier.removeListener(_onProfileChanged);
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.profile != widget.profile) {
+      setState(() {
+        _currentProfile = widget.profile;
+      });
+    }
+  }
+
+  void _onProfileChanged() {
+    if (mounted) {
+      final newProfile = profileNotifier.profile;
+      if (newProfile != _currentProfile) {
+        setState(() {
+          _currentProfile = newProfile;
+        });
+      }
+    }
+  }
+
+  void _onProfileTap() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProfileScreen(
+          onBack: () => Navigator.pop(context),
+          onMicTap: widget.onMicTap,
+          onMicLongPress: widget.onMicLongPress,
+          micState: widget.micState,
+          initialProfile: _currentProfile,
+          onProfileChanged: (newProfile) {
+            // Update global profile notifier
+            profileNotifier.updateProfile(newProfile);
+            widget.onProfileChanged?.call(newProfile);
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -142,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ScreenHeader(
           title: 'Eyeris',
           // No back button on home screen
-          rightElement: profile.ProfileAvatar(onTap: widget.onProfileTap),
+          rightElement: profile.ProfileAvatar(onTap: _onProfileTap),
         ),
       ],
     );

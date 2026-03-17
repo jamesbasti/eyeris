@@ -6,7 +6,9 @@ import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final Function(OnboardingProfile)? onProfileUpdate;
+
+  const SplashScreen({super.key, this.onProfileUpdate});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -21,7 +23,13 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => OnboardingScreen(
-            onComplete: (profile) => Navigator.pushReplacementNamed(context, '/'),
+            onComplete: (profile) {
+              // Update profile in app state
+              if (widget.onProfileUpdate != null) {
+                widget.onProfileUpdate!(profile);
+              }
+              Navigator.pushReplacementNamed(context, '/');
+            },
           ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(

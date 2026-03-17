@@ -6,14 +6,33 @@ import 'package:eyeris/ui/splash_screen.dart';
 import 'package:eyeris/ui/home_screen.dart';
 import 'package:eyeris/ui/dashboard/read_screen.dart';
 import 'package:eyeris/ui/dashboard/communicate_screen.dart';
+import 'package:eyeris/ui/dashboard/scene_describe.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
 import 'package:eyeris/widgets/gesture_navigation.dart';
 import 'package:eyeris/ui/camera/color_detect_camera_screen.dart';
-import 'package:eyeris/ui/camera/scene_describe_camera_screen.dart';
 import 'package:eyeris/widgets/sos_modal.dart';
+import 'package:eyeris/widgets/mic_bar.dart';
+import 'package:eyeris/services/profile_notifier.dart';
 
-class EyerisApp extends StatelessWidget {
+class EyerisApp extends StatefulWidget {
   const EyerisApp({super.key});
+
+  @override
+  State<EyerisApp> createState() => _EyerisAppState();
+}
+
+class _EyerisAppState extends State<EyerisApp> {
+  OnboardingProfile? _profile;
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  void _updateProfile(OnboardingProfile profile) {
+    setState(() {
+      _profile = profile;
+    });
+    
+    // Update global profile notifier to notify all listeners (including VoiceService)
+    profileNotifier.updateProfile(profile);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,24 +40,30 @@ class EyerisApp extends StatelessWidget {
       title: 'Eyeris',
       debugShowCheckedModeBanner: false,
       theme: buildEyerisTheme(),
-      onGenerateRoute: _onGenerateRoute,
-     initialRoute: EyerisRoutes.splash,
+      navigatorKey: navigatorKey,
+      initialRoute: EyerisRoutes.splash,
+      onGenerateRoute: (settings) => _onGenerateRoute(settings, _profile),
     );
   }
 
-  Route<dynamic> _onGenerateRoute(RouteSettings settings) {
-    final page = _pageForRoute(settings.name ?? EyerisRoutes.home);
-    return _NoAnimationRoute(page: page, settings: settings);
+  Route<dynamic> _onGenerateRoute(RouteSettings settings, OnboardingProfile? profile) {
+    final page = _pageForRoute(settings.name ?? EyerisRoutes.home, profile);
+    // Use profile hash as part of route key to force rebuild when profile changes
+    final routeSettings = RouteSettings(
+      name: settings.name,
+      arguments: settings.arguments,
+    );
+    return _NoAnimationRoute(page: page, settings: routeSettings);
   }
 
-  Widget _pageForRoute(String name) {
+  Widget _pageForRoute(String name, OnboardingProfile? profile) {
     switch (name) {
       case EyerisRoutes.splash:
-        return const _SplashRoute();
+        return _SplashRoute(onProfileUpdate: _updateProfile);
       case EyerisRoutes.home:
-        return const _HomeRoute();
+        return _HomeRoute(profile: profile, onProfileUpdate: _updateProfile);
       case EyerisRoutes.read:
-        return const _ReadRoute();
+        return _ReadRoute(profile: profile);
       case EyerisRoutes.communicate:
         return const _CommunicateRoute();
       case EyerisRoutes.onboarding:
@@ -48,13 +73,39 @@ class EyerisApp extends StatelessWidget {
       case EyerisRoutes.sceneDescribe:
         return const _SceneDescribeRoute();
       default:
-        return const _HomeRoute();
+        return _HomeRoute(profile: profile, onProfileUpdate: _updateProfile); // Fallback
     }
   }
 }
 
-class _HomeRoute extends StatelessWidget {
-  const _HomeRoute();
+class _HomeRoute extends StatefulWidget {
+  final OnboardingProfile? profile;
+  final Function(OnboardingProfile) onProfileUpdate;
+
+  const _HomeRoute({this.profile, required this.onProfileUpdate});
+
+  @override
+  State<_HomeRoute> createState() => _HomeRouteState();
+}
+
+class _HomeRouteState extends State<_HomeRoute> {
+  OnboardingProfile? _currentProfile;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentProfile = widget.profile;
+  }
+
+  @override
+  void didUpdateWidget(_HomeRoute oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.profile != widget.profile) {
+      setState(() {
+        _currentProfile = widget.profile;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,22 +121,33 @@ class _HomeRoute extends StatelessWidget {
         onCommunicateTap: () => Navigator.pushNamed(context, EyerisRoutes.communicate),
         onProfileTap:     () {},
         onMicTap:         () {},
+        profile:          _currentProfile,
+        onProfileChanged: (newProfile) {
+              // Update app state when profile changes
+              widget.onProfileUpdate(newProfile);
+            },
       ),
     );
   }
 }
 
 class _SplashRoute extends StatelessWidget {
-  const _SplashRoute();
+  final Function(OnboardingProfile) onProfileUpdate;
+
+  const _SplashRoute({required this.onProfileUpdate});
 
   @override
   Widget build(BuildContext context) {
-    return const SplashScreen();
+    return SplashScreen(
+      onProfileUpdate: onProfileUpdate,
+    );
   }
 }
 
 class _ReadRoute extends StatelessWidget {
-  const _ReadRoute();
+  final OnboardingProfile? profile;
+
+  const _ReadRoute({this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -96,10 +158,11 @@ class _ReadRoute extends StatelessWidget {
       onReadingSpeedTap:  () {},
       onVoiceLanguageTap: () {},
       onMicTap:           () {},
+      micState:           MicBarState.idle,
+      profile:            profile,
     );
   }
 }
-
 
 class _ColorDetectRoute extends StatelessWidget {
   const _ColorDetectRoute();
@@ -117,8 +180,9 @@ class _SceneDescribeRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SceneDescribeCameraScreen(
+    return SceneDescribeScreen(
       onBack: () => Navigator.pop(context),
+      onMicTap: () {},
     );
   }
 }
