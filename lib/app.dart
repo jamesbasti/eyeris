@@ -178,17 +178,14 @@ class _HomeRouteState extends State<_HomeRoute> {
         onCommunicateTap: () => Navigator.pushNamed(context, EyerisRoutes.communicate),
         onProfileTap:     () {},
         onMicTap:         () {},
-<<<<<<< HEAD
         profile:          _currentProfile,
         onProfileChanged: (newProfile) {
               // Update app state when profile changes
               widget.onProfileUpdate(newProfile);
             },
-=======
         onMicPressStart:  _voiceControl.startListening,
         onMicPressEnd:    _voiceControl.stopListening,
         micState:         _micState,
->>>>>>> origin/main
       ),
     );
   }

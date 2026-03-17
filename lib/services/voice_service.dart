@@ -42,8 +42,14 @@ class VoiceService {
       try {
         final voices = await _flutterTts.getVoices;
         if (voices.isNotEmpty) {
-          // Just use the first available voice
-          await _flutterTts.setVoice(voices.first);
+          // Handle voice setting properly for iOS
+          final voice = voices.first;
+          if (voice is Map<String, String>) {
+            await _flutterTts.setVoice(voice);
+          } else {
+            // Skip voice setting if format is unexpected
+            print('VoiceService: Voice format not supported, using default');
+          }
         }
       } catch (e) {
         print('VoiceService: Could not set voice, using default: $e');

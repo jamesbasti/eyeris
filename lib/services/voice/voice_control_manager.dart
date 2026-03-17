@@ -78,9 +78,12 @@ class VoiceControlManager {
       }
     };
 
+    // Initialize speech recognition (this will request microphone permission immediately)
     final initialized = await _speech.initialize();
     if (!initialized) {
       debugPrint('VoiceControl: speech recognition not available');
+    } else {
+      debugPrint('VoiceControl: speech recognition ready');
     }
     return initialized;
   }
