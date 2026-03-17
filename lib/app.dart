@@ -13,6 +13,8 @@ import 'package:eyeris/ui/camera/color_detect_camera_screen.dart';
 import 'package:eyeris/widgets/sos_modal.dart';
 import 'package:eyeris/widgets/mic_bar.dart';
 import 'package:eyeris/services/profile_notifier.dart';
+import 'package:eyeris/models/voice_command.dart';
+import 'package:eyeris/services/voice/voice_control_manager.dart';
 
 class EyerisApp extends StatefulWidget {
   const EyerisApp({super.key});
@@ -90,11 +92,14 @@ class _HomeRoute extends StatefulWidget {
 
 class _HomeRouteState extends State<_HomeRoute> {
   OnboardingProfile? _currentProfile;
+  final VoiceControlManager _voiceControl = VoiceControlManager.instance;
+  MicBarState _micState = MicBarState.idle;
 
   @override
   void initState() {
     super.initState();
     _currentProfile = widget.profile;
+    _initVoiceControl();
   }
 
   @override
@@ -105,6 +110,58 @@ class _HomeRouteState extends State<_HomeRoute> {
         _currentProfile = widget.profile;
       });
     }
+  }
+
+  Future<void> _initVoiceControl() async {
+    await _voiceControl.initialize();
+
+    _voiceControl.onStateChanged = (state) {
+      if (!mounted) return;
+      setState(() {
+        switch (state) {
+          case VoiceControlState.idle:
+            _micState = MicBarState.idle;
+            break;
+          case VoiceControlState.listening:
+            _micState = MicBarState.listening;
+            break;
+          case VoiceControlState.processing:
+          case VoiceControlState.executing:
+            _micState = MicBarState.processing;
+            break;
+        }
+      });
+    };
+
+    _voiceControl.onNavigate = (target) {
+      if (!mounted) return;
+      switch (target) {
+        case NavigationTarget.read:
+          Navigator.pushNamed(context, EyerisRoutes.read);
+          break;
+        case NavigationTarget.colorDetect:
+          Navigator.pushNamed(context, EyerisRoutes.colorDetect);
+          break;
+        case NavigationTarget.sceneDescribe:
+          Navigator.pushNamed(context, EyerisRoutes.sceneDescribe);
+          break;
+        case NavigationTarget.communicate:
+          Navigator.pushNamed(context, EyerisRoutes.communicate);
+          break;
+        case NavigationTarget.back:
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
+          break;
+        case NavigationTarget.home:
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            EyerisRoutes.home,
+            (route) => false,
+          );
+          break;
+      }
+    };
   }
 
   @override
@@ -121,11 +178,17 @@ class _HomeRouteState extends State<_HomeRoute> {
         onCommunicateTap: () => Navigator.pushNamed(context, EyerisRoutes.communicate),
         onProfileTap:     () {},
         onMicTap:         () {},
+<<<<<<< HEAD
         profile:          _currentProfile,
         onProfileChanged: (newProfile) {
               // Update app state when profile changes
               widget.onProfileUpdate(newProfile);
             },
+=======
+        onMicPressStart:  _voiceControl.startListening,
+        onMicPressEnd:    _voiceControl.stopListening,
+        micState:         _micState,
+>>>>>>> origin/main
       ),
     );
   }

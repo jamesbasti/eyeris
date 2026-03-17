@@ -167,4 +167,120 @@ Give a single, natural-sounding sentence that:
       return colorName;
     }
   }
+
+  /// Returns a rich, spoken-style description for multiple detected colours.
+  /// Includes spatial context (positions) and percentages for accessibility.
+  /// Falls back to a simple description if the API key is missing or request fails.
+  Future<String> describeColors({
+    required String dominantColor,
+    required String dominantHex,
+    required double dominantPercentage,
+    required List<(String name, String hex, double percentage, String position)> secondaryColors,
+  }) async {
+    final apiKey = dotenv.env['OPENAI_API_KEY'];
+    
+    // Build fallback description
+    final fallback = _buildFallbackDescription(
+      dominantColor, dominantPercentage, secondaryColors);
+    
+    if (apiKey == null || apiKey.isEmpty) {
+      return fallback;
+    }
+
+    // Build color info for prompt
+    final colorInfo = StringBuffer();
+    colorInfo.writeln('Dominant colour: $dominantColor ($dominantHex) - ${dominantPercentage.round()}% of the view');
+    
+    if (secondaryColors.isNotEmpty) {
+      colorInfo.writeln('Secondary colours:');
+      for (final (name, hex, pct, pos) in secondaryColors) {
+        colorInfo.writeln('  - $name ($hex): ${pct.round()}%, located at $pos');
+      }
+    }
+
+    final prompt = '''
+The user is blind or has low vision. They pointed their phone camera at something and detected these colours:
+
+$colorInfo
+
+Generate a natural, spoken description that:
+- Describes the overall colour composition in plain language
+- If multiple colours, describe the pattern or relationship (e.g., "striped", "checkered", "gradient", "with accents")
+- Adds a brief, vivid comparison when helpful (e.g., "like a sunset", "similar to a coffee with cream")
+- Mentions spatial relationships if relevant (e.g., "blue on top, white below")
+- Is concise — no more than 20 words
+- Does NOT start with "The colour is" or "This is" or "I see"
+- Sounds natural when spoken aloud
+''';
+
+    const url = 'https://api.openai.com/v1/chat/completions';
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $apiKey',
+    };
+    final body = jsonEncode(<String, Object>{
+      'model': 'gpt-4.1-mini',
+      'messages': <Map<String, String>>[
+        <String, String>{
+          'role': 'system',
+          'content':
+              'You are a concise colour-description assistant for blind users. '
+              'Describe colour combinations naturally and vividly. '
+              'Respond with exactly one short sentence.',
+        },
+        <String, String>{
+          'role': 'user',
+          'content': prompt,
+        },
+      ],
+      'max_tokens': 60,
+      'temperature': 0.7,
+    });
+
+    try {
+      final response =
+          await http.post(Uri.parse(url), headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final choices = data['choices'] as List<dynamic>?;
+        if (choices != null && choices.isNotEmpty) {
+          final message = (choices.first as Map<String, dynamic>)['message']
+              as Map<String, dynamic>?;
+          final content = message?['content'] as String?;
+          if (content != null && content.trim().isNotEmpty) {
+            return content.trim();
+          }
+        }
+      }
+      return fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  /// Builds a fallback description when AI is unavailable
+  String _buildFallbackDescription(
+    String dominantColor,
+    double dominantPercentage,
+    List<(String name, String hex, double percentage, String position)> secondaryColors,
+  ) {
+    if (secondaryColors.isEmpty) {
+      return dominantColor;
+    }
+    
+    if (dominantPercentage >= 80) {
+      // Mostly one color
+      final accent = secondaryColors.first.$1;
+      return 'Mostly $dominantColor with a touch of $accent';
+    } else if (dominantPercentage >= 60) {
+      // Dominant with accents
+      final accents = secondaryColors.map((c) => c.$1).join(' and ');
+      return '$dominantColor with $accents accents';
+    } else {
+      // Mixed colors
+      final others = secondaryColors.map((c) => c.$1).join(', ');
+      return '$dominantColor and $others';
+    }
+  }
 }

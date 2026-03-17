@@ -6,41 +6,39 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/services/color_service.dart';
 import 'package:eyeris/services/openai_service.dart';
-import 'dart:io';
 
 // ─────────────────────────────────────────────
-// COLOR DETECT CAMERA SCREEN
+// COLOR DETECT SCREEN
 //
 // Tap-to-detect colour identification.
-// User sees live camera preview, taps "Detect"
-// to sample the colour, then hears the result
-// spoken aloud via TTS with an AI-enhanced
-// description.
+// User sees live camera preview with a centre
+// crosshair, taps "Detect" to sample the colour,
+// then hears the result spoken aloud via TTS
+// with an AI-enhanced description.
 // ─────────────────────────────────────────────
 
 enum _DetectState { idle, detecting, result }
 
-
-class ColorDetectCameraScreen extends StatefulWidget {
+class ColorDetectScreen extends StatefulWidget {
   final VoidCallback onBack;
 
-  const ColorDetectCameraScreen({
+  const ColorDetectScreen({
     super.key,
     required this.onBack,
   });
 
   @override
-  State<ColorDetectCameraScreen> createState() => _ColorDetectCameraScreenState();
+  State<ColorDetectScreen> createState() => _ColorDetectScreenState();
 }
 
-class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
+class _ColorDetectScreenState extends State<ColorDetectScreen> {
   CameraController? _cameraController;
   bool _cameraReady = false;
 
   _DetectState _state = _DetectState.idle;
-  MultiColorResult? _multiResult;
+  ColorResult? _result;
   String _aiDescription = '';
-  bool _torchOn = false;
+  bool _flashOn = false;
 
   final FlutterTts _tts = FlutterTts();
   final OpenAIService _openAI = OpenAIService();
@@ -60,37 +58,6 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
     await _tts.setLanguage('en-US');
     await _tts.setSpeechRate(0.45);
     await _tts.setPitch(1.0);
-
-    if (Platform.isIOS) {
-      try {
-        // Set Evan enhanced voice using the display name
-        await _tts.setVoice({
-          'name': 'Evan (Enhanced)',
-          'locale': 'en-US'
-        });
-      } catch (e) {
-        // Voice setting failed, will use default
-      }
-    } else if (Platform.isAndroid) {
-      try {
-        final engines = await _tts.getEngines as List;
-        final google = engines.firstWhere(
-          (e) => e.toString().toLowerCase().contains('google'),
-          orElse: () => '',
-        );
-        if (google.toString().isNotEmpty) {
-          await _tts.setEngine(google.toString());
-        }
-      } catch (e) {
-        // Engine selection failed, will use default
-      }
-    }
-
-    _tts.setCompletionHandler(() {
-      if (mounted && _state == _DetectState.result) {
-        setState(() => _state = _DetectState.idle);
-      }
-    });
   }
 
   Future<void> _initCamera() async {
@@ -133,42 +100,33 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
   Future<void> _detectColor() async {
     if (_latestImage == null || _state == _DetectState.detecting) return;
 
-    // Haptic feedback for detection start
     HapticFeedback.mediumImpact();
     setState(() {
       _state = _DetectState.detecting;
-      _multiResult = null;
+      _result = null;
       _aiDescription = '';
     });
 
-    // 1. Sample colours from multiple regions (3x3 grid)
-    final multiResult = _colorService.analyseMultiColor(_latestImage!);
-    if (multiResult == null || !mounted) {
+    // 1. Sample colour from centre pixels
+    final colorResult = _colorService.analyse(_latestImage!);
+    if (colorResult == null || !mounted) {
       setState(() => _state = _DetectState.idle);
       return;
     }
 
-    setState(() => _multiResult = multiResult);
+    setState(() => _result = colorResult);
 
-    // 2. Speak dominant color immediately with category-based haptic
+    // 2. Speak basic name immediately
     await _tts.stop();
-    _playHapticForCategory(multiResult.dominant.color.category);
-    await _tts.speak(multiResult.dominant.color.name);
+    await _tts.speak(colorResult.name);
 
-    // 3. Fetch AI-enhanced description with multi-color context
-    final secondaryData = multiResult.secondary.map((s) => (
-      s.color.name,
-      s.color.hex,
-      s.percentage,
-      s.position,
-    )).toList();
-
-    final description = await _openAI.describeColors(
-      dominantColor: multiResult.dominant.color.name,
-      dominantHex: multiResult.dominant.color.hex,
-      dominantPercentage: multiResult.dominant.percentage,
-      secondaryColors: secondaryData,
+    // 3. Fetch AI-enhanced description in background
+    debugPrint('ColorDetect: Calling AI for "${colorResult.name}" (${colorResult.hex})');
+    final description = await _openAI.describeColor(
+      colorName: colorResult.name,
+      hex: colorResult.hex,
     );
+    debugPrint('ColorDetect: AI returned: "$description"');
 
     if (!mounted) return;
     setState(() {
@@ -176,30 +134,13 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
       _state = _DetectState.result;
     });
 
-    // 4. Speak the AI description
-    if (description != multiResult.dominant.color.name) {
+    // 4. If AI gave something richer than just the name, speak it
+    if (description != colorResult.name) {
+      debugPrint('ColorDetect: Speaking AI description');
       await _tts.stop();
       await _tts.speak(description);
-    }
-  }
-
-  /// Play different haptic patterns based on color category
-  void _playHapticForCategory(String category) {
-    switch (category) {
-      case 'warm':
-        // Double tap for warm colors
-        HapticFeedback.lightImpact();
-        Future.delayed(const Duration(milliseconds: 100), () {
-          HapticFeedback.lightImpact();
-        });
-        break;
-      case 'cool':
-        // Single heavy tap for cool colors
-        HapticFeedback.heavyImpact();
-        break;
-      default:
-        // Medium tap for neutral colors
-        HapticFeedback.mediumImpact();
+    } else {
+      debugPrint('ColorDetect: AI returned same as basic name, not speaking again');
     }
   }
 
@@ -211,16 +152,15 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
     super.dispose();
   }
 
-  Future<void> _toggleTorch() async {
+  Future<void> _toggleFlash() async {
     if (_cameraController == null || !_cameraReady) return;
     try {
-      await _cameraController!.setFlashMode(
-        _torchOn ? FlashMode.off : FlashMode.torch,
-      );
+      final next = _flashOn ? FlashMode.off : FlashMode.torch;
+      await _cameraController!.setFlashMode(next);
       if (!mounted) return;
-      setState(() => _torchOn = !_torchOn);
+      setState(() => _flashOn = !_flashOn);
     } catch (e) {
-      debugPrint('ColorDetect: torch toggle error — $e');
+      debugPrint('ColorDetect: flash toggle error — $e');
     }
   }
 
@@ -240,8 +180,8 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
           // Camera preview with crosshair
           Expanded(child: _buildCameraArea()),
 
-          // Result card (multi-color)
-          if (_multiResult != null) _buildMultiColorResultCard(),
+          // Result card
+          if (_result != null) _buildResultCard(),
 
           // Detect button
           _buildDetectButton(),
@@ -352,24 +292,28 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
             ),
           ),
 
-          // Torch toggle button
+          // Flash toggle button
           Semantics(
-            label: _torchOn ? 'Torch on. Tap to turn off.' : 'Torch off. Tap to turn on.',
+            label: _flashOn ? 'Flash on. Double tap to turn off.' : 'Flash off. Double tap to turn on.',
+            hint: 'Toggles camera flash for better colour detection in low light',
             button: true,
             child: GestureDetector(
-              onTap: _toggleTorch,
+              onTap: _toggleFlash,
               child: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: _torchOn ? EyerisColors.primary : EyerisTheme.surface,
+                  color: _flashOn ? EyerisColors.primary : EyerisTheme.surface,
                   borderRadius: BorderRadius.circular(EyerisRadii.small),
-                  border: Border.all(color: EyerisColors.primary, width: 2),
+                  border: Border.all(
+                    color: EyerisColors.primary,
+                    width: 2,
+                  ),
                 ),
                 child: Center(
                   child: Icon(
-                    _torchOn ? Icons.flashlight_on : Icons.flashlight_off,
-                    color: _torchOn ? EyerisColors.black : EyerisColors.primary,
+                    _flashOn ? Icons.flash_on : Icons.flash_off,
+                    color: _flashOn ? EyerisColors.black : EyerisColors.primary,
                     size: 20,
                   ),
                 ),
@@ -381,11 +325,8 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
     );
   }
 
-  Widget _buildMultiColorResultCard() {
-    final result = _multiResult!;
-    final dominant = result.dominant;
-    final secondary = result.secondary;
-
+  Widget _buildResultCard() {
+    final r = _result!;
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: EyerisSpacing.md2,
@@ -397,156 +338,60 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
         border: Border.all(color: EyerisColors.border, width: EyerisBorders.card),
         borderRadius: BorderRadius.circular(EyerisRadii.card),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Dominant color row
-          Row(
-            children: [
-              // Dominant colour swatch
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: dominant.color.color,
-                  borderRadius: BorderRadius.circular(EyerisRadii.small),
-                  border: Border.all(color: EyerisColors.border, width: EyerisBorders.thin),
-                ),
-              ),
-              const SizedBox(width: EyerisSpacing.md),
-              // Dominant name + percentage
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            dominant.color.name.toUpperCase(),
-                            style: const TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: EyerisColors.textPrimary,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '${dominant.percentage.round()}%',
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: EyerisColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${dominant.color.hex} • ${dominant.color.category}',
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        color: EyerisColors.textMuted,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // Secondary colors row (if any)
-          if (secondary.isNotEmpty) ...[
-            const SizedBox(height: EyerisSpacing.sm),
-            const Divider(color: EyerisColors.border, height: 1),
-            const SizedBox(height: EyerisSpacing.sm),
-            Row(
-              children: [
-                for (int i = 0; i < secondary.length; i++) ...[
-                  if (i > 0) const SizedBox(width: EyerisSpacing.sm),
-                  Expanded(
-                    child: _buildSecondaryColorChip(secondary[i]),
-                  ),
-                ],
-              ],
-            ),
-          ],
-
-          // AI description
-          if (_aiDescription.isNotEmpty &&
-              _aiDescription != dominant.color.name) ...[
-            const SizedBox(height: EyerisSpacing.sm),
-            const Divider(color: EyerisColors.border, height: 1),
-            const SizedBox(height: EyerisSpacing.sm),
-            Text(
-              _aiDescription,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: EyerisColors.primary,
-                height: 1.4,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSecondaryColorChip(DetectedColor detected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: EyerisSpacing.sm,
-        vertical: EyerisSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: EyerisColors.background,
-        borderRadius: BorderRadius.circular(EyerisRadii.small),
-        border: Border.all(color: EyerisColors.border, width: 1),
-      ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
+          // Colour swatch
           Container(
-            width: 20,
-            height: 20,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: detected.color.color,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: EyerisColors.border, width: 1),
+              color: r.color,
+              borderRadius: BorderRadius.circular(EyerisRadii.small),
+              border: Border.all(color: EyerisColors.border, width: EyerisBorders.thin),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: EyerisSpacing.md),
+          // Name + hex + AI description
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  detected.color.name,
+                  r.name.toUpperCase(),
                   style: const TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                     color: EyerisColors.textPrimary,
+                    letterSpacing: 1.0,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  '${detected.percentage.round()}%',
+                  r.hex,
                   style: const TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 9,
+                    fontSize: 12,
                     color: EyerisColors.textMuted,
+                    letterSpacing: 0.8,
                   ),
                 ),
+                if (_aiDescription.isNotEmpty &&
+                    _aiDescription != r.name) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    _aiDescription,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: EyerisColors.primary,
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
@@ -568,7 +413,7 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
           onTap: isDetecting ? null : _detectColor,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
-            height: 88,
+            height: EyerisTouchTargets.primaryButton,
             decoration: BoxDecoration(
               color: isDetecting ? EyerisColors.primaryDim : EyerisColors.primary,
               borderRadius: BorderRadius.circular(EyerisRadii.medium),
@@ -587,7 +432,7 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
                     'DETECT COLOUR',
                     style: TextStyle(
                       fontFamily: 'monospace',
-                      fontSize: 18,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: EyerisColors.black,
                       letterSpacing: 1.6,
