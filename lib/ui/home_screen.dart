@@ -29,6 +29,8 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onProfileTap;
   final VoidCallback onMicTap;
   final VoidCallback? onMicLongPress;
+  final VoidCallback? onMicPressStart;
+  final VoidCallback? onMicPressEnd;
   final MicBarState micState;
 
   const HomeScreen({
@@ -40,6 +42,8 @@ class HomeScreen extends StatefulWidget {
     this.onProfileTap = _noop,
     this.onMicTap = _noop,
     this.onMicLongPress,
+    this.onMicPressStart,
+    this.onMicPressEnd,
     this.micState = MicBarState.idle,
   });
 
@@ -124,9 +128,11 @@ class _HomeScreenState extends State<HomeScreen> {
           // ── Persistent mic bar — pinned to bottom
           MicBar(
             contextLabel: 'Speak to control',
-            contextHint: 'Say a command or hold for\ncontinuous listening',
+            contextHint: 'Press and hold to speak\na command',
             onPress: widget.onMicTap,
             onLongPress: widget.onMicLongPress,
+            onPressStart: widget.onMicPressStart,
+            onPressEnd: widget.onMicPressEnd,
             state: widget.micState,
           ),
         ],

@@ -21,6 +21,8 @@ class MicBar extends StatefulWidget {
     this.contextHint,
     required this.onPress,
     this.onLongPress,
+    this.onPressStart,
+    this.onPressEnd,
     this.state = MicBarState.idle,
     this.accessibilityLabel,
   });
@@ -29,6 +31,8 @@ class MicBar extends StatefulWidget {
   final String? contextHint;
   final VoidCallback onPress;
   final VoidCallback? onLongPress;
+  final VoidCallback? onPressStart;
+  final VoidCallback? onPressEnd;
   final MicBarState state;
   final String? accessibilityLabel;
 
@@ -100,55 +104,61 @@ class _MicBarState extends State<MicBar> with SingleTickerProviderStateMixin {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Mic button: 64×64 circle
-          Semantics(
-            label: _semanticLabel,
-            hint: widget.onLongPress != null
-                ? 'Long press for continuous listening.'
-                : null,
-            button: true,
-            child: GestureDetector(
-              onTap: widget.onPress,
-              onLongPress: widget.onLongPress,
-              child: _MicButton(
+      child: GestureDetector(
+        onTap: widget.onPress,
+        onLongPress: widget.onLongPress,
+        onTapDown: widget.onPressStart != null ? (_) => widget.onPressStart!() : null,
+        onTapUp: widget.onPressEnd != null ? (_) => widget.onPressEnd!() : null,
+        onTapCancel: widget.onPressEnd,
+        behavior: HitTestBehavior.opaque,
+        child: Semantics(
+          button: true,
+          label: _semanticLabel,
+          hint: widget.onPressStart != null
+              ? 'Press and hold to speak a command.'
+              : (widget.onLongPress != null
+                  ? 'Long press for continuous listening.'
+                  : null),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Mic button: 64×64 circle
+              _MicButton(
                 state: widget.state,
                 pulseAnimation: _pulseAnimation,
               ),
-            ),
-          ),
-          const SizedBox(width: 20),
-          // Context text
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.contextLabel.toUpperCase(),
-                  style: typography(
-                    size: 'sm',
-                    weight: FontWeight.w700,
-                    color: EyerisTheme.textPrimary,
-                    letterSpacingKey: 'wide',
-                  ).copyWith(letterSpacing: 12 * 0.08),
+              const SizedBox(width: 20),
+              // Context text
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.contextLabel.toUpperCase(),
+                      style: typography(
+                        size: 'sm',
+                        weight: FontWeight.w700,
+                        color: EyerisTheme.textPrimary,
+                        letterSpacingKey: 'wide',
+                      ).copyWith(letterSpacing: 12 * 0.08),
+                    ),
+                    if (widget.contextHint != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.contextHint!,
+                        style: typography(
+                          size: 'xs',
+                          color: EyerisTheme.textMuted,
+                        ).copyWith(height: 1.6),
+                      ),
+                    ],
+                  ],
                 ),
-                if (widget.contextHint != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.contextHint!,
-                    style: typography(
-                      size: 'xs',
-                      color: EyerisTheme.textMuted,
-                    ).copyWith(height: 1.6),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

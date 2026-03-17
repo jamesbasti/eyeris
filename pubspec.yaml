@@ -42,6 +42,8 @@ dependencies:
   google_ml_kit: ^0.16.0
   audioplayers: ^6.6.0  # For playing natural voice audio
   flutter_native_splash: ^2.4.1  # For native splash screen
+  speech_to_text: ^7.0.0  # On-device speech recognition
+  connectivity_plus: ^6.0.3  # Network connectivity check
 
 dev_dependencies:
   flutter_test:

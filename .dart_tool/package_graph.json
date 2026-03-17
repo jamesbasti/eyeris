@@ -9,6 +9,7 @@
       "dependencies": [
         "audioplayers",
         "camera",
+        "connectivity_plus",
         "flutter",
         "flutter_dotenv",
         "flutter_native_splash",
@@ -19,6 +20,7 @@
         "path",
         "path_provider",
         "permission_handler",
+        "speech_to_text",
         "tflite_flutter"
       ],
       "devDependencies": [
@@ -63,6 +65,36 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "connectivity_plus",
+      "version": "6.1.5",
+      "dependencies": [
+        "collection",
+        "connectivity_plus_platform_interface",
+        "flutter",
+        "flutter_web_plugins",
+        "meta",
+        "nm",
+        "web"
+      ]
+    },
+    {
+      "name": "flutter_native_splash",
+      "version": "2.4.7",
+      "dependencies": [
+        "ansicolor",
+        "args",
+        "flutter",
+        "flutter_web_plugins",
+        "html",
+        "image",
+        "meta",
+        "path",
+        "universal_io",
+        "xml",
+        "yaml"
       ]
     },
     {
@@ -337,6 +369,65 @@
       ]
     },
     {
+      "name": "nm",
+      "version": "0.5.0",
+      "dependencies": [
+        "dbus"
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "connectivity_plus_platform_interface",
+      "version": "2.0.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "ansicolor",
+      "version": "2.0.3",
+      "dependencies": []
+    },
+    {
+      "name": "xml",
+      "version": "6.6.1",
+      "dependencies": [
+        "collection",
+        "meta",
+        "petitparser"
+      ]
+    },
+    {
+      "name": "universal_io",
+      "version": "2.3.1",
+      "dependencies": [
+        "collection",
+        "meta",
+        "typed_data"
+      ]
+    },
+    {
+      "name": "html",
+      "version": "0.15.6",
+      "dependencies": [
+        "csslib",
+        "source_span"
+      ]
+    },
+    {
       "name": "uuid",
       "version": "4.5.3",
       "dependencies": [
@@ -519,13 +610,6 @@
       ]
     },
     {
-      "name": "flutter_web_plugins",
-      "version": "0.0.0",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
       "name": "path_provider_windows",
       "version": "2.3.0",
       "dependencies": [
@@ -643,11 +727,6 @@
       ]
     },
     {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
-    },
-    {
       "name": "http_parser",
       "version": "4.1.2",
       "dependencies": [
@@ -747,15 +826,6 @@
       ]
     },
     {
-      "name": "xml",
-      "version": "6.6.1",
-      "dependencies": [
-        "collection",
-        "meta",
-        "petitparser"
-      ]
-    },
-    {
       "name": "archive",
       "version": "4.0.9",
       "dependencies": [
@@ -797,6 +867,38 @@
       ]
     },
     {
+      "name": "dbus",
+      "version": "0.7.12",
+      "dependencies": [
+        "args",
+        "ffi",
+        "meta",
+        "xml"
+      ]
+    },
+    {
+      "name": "petitparser",
+      "version": "7.0.2",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
+    },
+    {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "csslib",
+      "version": "1.0.2",
+      "dependencies": [
+        "source_span"
+      ]
+    },
+    {
       "name": "fixnum",
       "version": "1.1.1",
       "dependencies": []
@@ -828,13 +930,6 @@
       ]
     },
     {
-      "name": "typed_data",
-      "version": "1.4.0",
-      "dependencies": [
-        "collection"
-      ]
-    },
-    {
       "name": "stream_transform",
       "version": "2.1.1",
       "dependencies": []
@@ -845,14 +940,6 @@
       "dependencies": [
         "meta",
         "web"
-      ]
-    },
-    {
-      "name": "petitparser",
-      "version": "7.0.2",
-      "dependencies": [
-        "collection",
-        "meta"
       ]
     },
     {
@@ -925,49 +1012,40 @@
       ]
     },
     {
-      "name": "flutter_native_splash",
-      "version": "2.4.7",
+      "name": "speech_to_text",
+      "version": "7.3.0",
       "dependencies": [
-        "ansicolor",
-        "args",
+        "clock",
         "flutter",
         "flutter_web_plugins",
-        "html",
-        "image",
+        "json_annotation",
         "meta",
-        "path",
-        "universal_io",
-        "xml",
-        "yaml"
+        "pedantic",
+        "speech_to_text_platform_interface",
+        "speech_to_text_windows",
+        "web"
       ]
     },
     {
-      "name": "html",
-      "version": "0.15.6",
+      "name": "speech_to_text_platform_interface",
+      "version": "2.3.0",
       "dependencies": [
-        "csslib",
-        "source_span"
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
       ]
     },
     {
-      "name": "ansicolor",
-      "version": "2.0.3",
+      "name": "pedantic",
+      "version": "1.11.1",
       "dependencies": []
     },
     {
-      "name": "csslib",
-      "version": "1.0.2",
+      "name": "speech_to_text_windows",
+      "version": "1.0.0+beta.8",
       "dependencies": [
-        "source_span"
-      ]
-    },
-    {
-      "name": "universal_io",
-      "version": "2.3.1",
-      "dependencies": [
-        "collection",
-        "meta",
-        "typed_data"
+        "flutter",
+        "speech_to_text_platform_interface"
       ]
     }
   ],
