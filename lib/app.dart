@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/core/routes.dart';
+import 'package:eyeris/ui/splash_screen.dart';
 import 'package:eyeris/ui/home_screen.dart';
 import 'package:eyeris/ui/dashboard/read_screen.dart';
 import 'package:eyeris/ui/dashboard/navigate_screen.dart';
@@ -23,7 +24,7 @@ class EyerisApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildEyerisTheme(),
       onGenerateRoute: _onGenerateRoute,
-     initialRoute: EyerisRoutes.onboarding,   // temporary test
+     initialRoute: EyerisRoutes.splash,
     );
   }
 
@@ -34,6 +35,8 @@ class EyerisApp extends StatelessWidget {
 
   Widget _pageForRoute(String name) {
     switch (name) {
+      case EyerisRoutes.splash:
+        return const _SplashRoute();
       case EyerisRoutes.home:
         return const _HomeRoute();
       case EyerisRoutes.read:
@@ -75,6 +78,15 @@ class _HomeRoute extends StatelessWidget {
         onMicTap:         () {},
       ),
     );
+  }
+}
+
+class _SplashRoute extends StatelessWidget {
+  const _SplashRoute();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SplashScreen();
   }
 }
 

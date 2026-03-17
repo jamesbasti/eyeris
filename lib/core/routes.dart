@@ -6,6 +6,7 @@
 class EyerisRoutes {
   EyerisRoutes._();
 
+  static const String splash       = '/splash';
   static const String home        = '/';
   static const String read        = '/read';
   static const String navigate    = '/navigate';
