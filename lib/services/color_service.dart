@@ -466,6 +466,11 @@ class ColorService {
     );
   }
 
+  /// Analyze a single Color object and return the nearest named color
+  ColorResult? analyzeColor(Color color) {
+    return _nearestNamed(color);
+  }
+
   // ── RGB to LAB conversion for perceptually uniform color distance ──
 
   List<double> _rgbToLab(int r, int g, int b) {

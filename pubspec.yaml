@@ -46,6 +46,7 @@ dependencies:
   connectivity_plus: ^6.0.3  # Network connectivity check
   shared_preferences: ^2.2.2  # Local storage
   record: ^6.0.0  # Audio recording
+  image_picker: ^1.0.7  # Image upload for color detection
 
 dev_dependencies:
   flutter_test:
