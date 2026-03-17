@@ -288,6 +288,36 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
     });
   }
 
+  Widget _buildImageUploadButton() {
+    return Semantics(
+      label: 'Upload image. Double tap to select an image from gallery for color detection.',
+      hint: 'Switch to image upload mode',
+      button: true,
+      child: GestureDetector(
+        onTap: _pickImage,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(EyerisRadii.medium),
+            border: Border.all(
+              color: EyerisColors.primary,
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.photo_library,
+              color: EyerisColors.primary,
+              size: 24,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Build ──────────────────────────────────
 
   @override
@@ -352,6 +382,13 @@ class _ColorDetectScreenState extends State<ColorDetectScreen> {
 
         // Centre crosshair overlay
         _buildCrosshair(),
+
+        // Image upload button overlay
+        Positioned(
+          top: 16,
+          right: 16,
+          child: _buildImageUploadButton(),
+        ),
       ],
     );
     } else {

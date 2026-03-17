@@ -1,6 +1,6 @@
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter/foundation.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
-import 'dart:developer' as developer;
 
 // ─────────────────────────────────────────────
 // VOICE SERVICE
@@ -30,7 +30,7 @@ class VoiceService {
     if (_isInitialized) return;
 
     try {
-      print('VoiceService: Initializing with profile speed: ${profile?.voiceSpeed}');
+      debugPrint('VoiceService: Initializing with profile speed: ${profile?.voiceSpeed}');
       
       // Set default values
       await _flutterTts.setLanguage("en_US");
@@ -48,11 +48,11 @@ class VoiceService {
             await _flutterTts.setVoice(voice);
           } else {
             // Skip voice setting if format is unexpected
-            print('VoiceService: Voice format not supported, using default');
+            debugPrint('VoiceService: Voice format not supported, using default');
           }
         }
       } catch (e) {
-        print('VoiceService: Could not set voice, using default: $e');
+        debugPrint('VoiceService: Could not set voice, using default: $e');
       }
 
       _currentProfile = profile;
@@ -61,22 +61,22 @@ class VoiceService {
       }
 
       _isInitialized = true;
-      print('VoiceService: Initialized successfully with speed: ${_currentProfile?.voiceSpeed}');
+      debugPrint('VoiceService: Initialized successfully with speed: ${_currentProfile?.voiceSpeed}');
     } catch (e) {
-      print('VoiceService: Failed to initialize: $e');
+      debugPrint('VoiceService: Failed to initialize: $e');
     }
   }
 
   // Update profile and refresh TTS settings
   Future<void> updateProfile(OnboardingProfile profile) async {
-    print('VoiceService: updateProfile called with speed: ${profile.voiceSpeed}');
+    debugPrint('VoiceService: updateProfile called with speed: ${profile.voiceSpeed}');
     _currentProfile = profile;
     if (_isInitialized) {
-      print('VoiceService: Already initialized, updating speech rate');
+      debugPrint('VoiceService: Already initialized, updating speech rate');
       await _updateSpeechRate();
-      print('VoiceService: Updated with new profile');
+      debugPrint('VoiceService: Updated with new profile');
     } else {
-      print('VoiceService: Not initialized yet, will update when initialized');
+      debugPrint('VoiceService: Not initialized yet, will update when initialized');
     }
   }
 
@@ -85,7 +85,7 @@ class VoiceService {
     double speechRate = 0.5; // Default to normal
     
     if (_currentProfile != null) {
-      print('VoiceService: Updating speech rate for: ${_currentProfile!.voiceSpeed}');
+      debugPrint('VoiceService: Updating speech rate for: ${_currentProfile!.voiceSpeed}');
       switch (_currentProfile!.voiceSpeed) {
         case 'slow':
           speechRate = 0.2;  // Much slower for noticeable difference
@@ -99,9 +99,9 @@ class VoiceService {
       }
     }
     
-    print('VoiceService: Setting speech rate to: $speechRate');
+    debugPrint('VoiceService: Setting speech rate to: $speechRate');
     await _flutterTts.setSpeechRate(speechRate);
-    print('VoiceService: Speech rate set successfully');
+    debugPrint('VoiceService: Speech rate set successfully');
   }
 
   // Speak text with current settings
@@ -112,9 +112,9 @@ class VoiceService {
     
     try {
       await _flutterTts.speak(text);
-      developer.log('Speaking: "$text"');
+      debugPrint('VoiceService: Speaking: "$text"');
     } catch (e) {
-      developer.log('Failed to speak: $e');
+      debugPrint('VoiceService: Failed to speak: $e');
     }
   }
 
@@ -122,9 +122,9 @@ class VoiceService {
   Future<void> stop() async {
     try {
       await _flutterTts.stop();
-      developer.log('Speech stopped');
+      debugPrint('VoiceService: Speech stopped');
     } catch (e) {
-      developer.log('Failed to stop speech: $e');
+      debugPrint('VoiceService: Failed to stop speech: $e');
     }
   }
 
@@ -132,9 +132,9 @@ class VoiceService {
   Future<void> pause() async {
     try {
       await _flutterTts.pause();
-      developer.log('Speech paused');
+      debugPrint('VoiceService: Speech paused');
     } catch (e) {
-      developer.log('Failed to pause speech: $e');
+      debugPrint('VoiceService: Failed to pause speech: $e');
     }
   }
 
@@ -143,9 +143,9 @@ class VoiceService {
   Future<void> setLanguage(String language) async {
     try {
       await _flutterTts.setLanguage(language);
-      developer.log('Language set to: $language');
+      debugPrint('VoiceService: Language set to: $language');
     } catch (e) {
-      developer.log('Failed to set language: $e');
+      debugPrint('VoiceService: Failed to set language: $e');
     }
   }
 
@@ -154,7 +154,7 @@ class VoiceService {
     try {
       return await _flutterTts.getLanguages;
     } catch (e) {
-      developer.log('Failed to get languages: $e');
+      debugPrint('VoiceService: Failed to get languages: $e');
       return [];
     }
   }
@@ -164,9 +164,9 @@ class VoiceService {
     try {
       await _flutterTts.stop();
       _isInitialized = false;
-      developer.log('VoiceService disposed');
+      debugPrint('VoiceService: VoiceService disposed');
     } catch (e) {
-      developer.log('Failed to dispose VoiceService: $e');
+      debugPrint('VoiceService: Failed to dispose VoiceService: $e');
     }
   }
 }

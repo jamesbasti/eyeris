@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
 import 'package:eyeris/services/voice_service.dart';
 
@@ -16,19 +17,19 @@ class ProfileNotifier extends ChangeNotifier {
   OnboardingProfile? get profile => _profile;
 
   void updateProfile(OnboardingProfile profile) {
-    print('ProfileNotifier: Updating profile to: ${profile.voiceSpeed} speed');
+    debugPrint('ProfileNotifier: Updating profile to: ${profile.voiceSpeed} speed');
     _profile = profile;
     
     // Initialize VoiceService if not already initialized, then update profile
     if (!VoiceService.instance.isInitialized) {
-      print('ProfileNotifier: Initializing VoiceService');
+      debugPrint('ProfileNotifier: Initializing VoiceService');
       VoiceService.instance.initialize(profile: profile);
     } else {
-      print('ProfileNotifier: Updating existing VoiceService');
+      debugPrint('ProfileNotifier: Updating existing VoiceService');
       VoiceService.instance.updateProfile(profile);
     }
     
-    print('ProfileNotifier: Notifying listeners');
+    debugPrint('ProfileNotifier: Notifying listeners');
     notifyListeners();
   }
 }
