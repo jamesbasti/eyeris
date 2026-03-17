@@ -8,6 +8,8 @@ import 'package:eyeris/widgets/mic_bar.dart';
 import 'package:eyeris/widgets/screen_header.dart';
 import 'package:eyeris/widgets/section_label.dart';
 import 'package:eyeris/widgets/icons/eyeris_icons.dart';
+import 'package:eyeris/services/double_tap_detector.dart';
+import 'package:eyeris/services/haptic_feedback_service.dart';
 
 // ─────────────────────────────────────────────
 // COMMUNICATE SCREEN (Phase 3 — UI shell only)
@@ -192,8 +194,80 @@ class _SOSRow extends StatefulWidget {
   State<_SOSRow> createState() => _SOSRowState();
 }
 
-class _SOSRowState extends State<_SOSRow> {
+class _SOSRowState extends State<_SOSRow> with SingleTickerProviderStateMixin {
   bool _pressed = false;
+  bool _showTapAgainHint = false;
+  late DoubleTapDetector _doubleTapDetector;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    
+    _doubleTapDetector = DoubleTapDetector(
+      onFirstTap: _handleFirstTap,
+      onDoubleTap: _handleDoubleTap,
+    );
+  }
+
+  @override
+  void dispose() {
+    _doubleTapDetector.dispose();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  void _handleFirstTap() {
+    // Light haptic on first tap
+    HapticFeedbackService.instance.trigger(HapticPattern.light);
+    
+    // Show "TAP AGAIN" hint
+    setState(() => _showTapAgainHint = true);
+    
+    // Pulse animation
+    _pulseController.forward().then((_) => _pulseController.reverse());
+    
+    // Announce for screen readers
+    if (context.mounted) {
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        'First tap registered. Tap again within 500 milliseconds to activate emergency SOS.',
+        TextDirection.ltr,
+      );
+    }
+    
+    // Hide hint after timeout
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() => _showTapAgainHint = false);
+      }
+    });
+  }
+
+  void _handleDoubleTap() {
+    // Medium haptic on second tap
+    HapticFeedbackService.instance.trigger(HapticPattern.medium);
+    
+    // Hide hint
+    setState(() => _showTapAgainHint = false);
+    
+    // Trigger long press callback (which opens countdown)
+    widget.onLongPress();
+  }
+
+  void _handleTap() {
+    _doubleTapDetector.registerTap();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -204,9 +278,8 @@ class _SOSRowState extends State<_SOSRow> {
       button: true,
       child: GestureDetector(
         onTapDown:  (_) => setState(() => _pressed = true),
-        onTapUp:    (_) { setState(() => _pressed = false); widget.onTap(); },
+        onTapUp:    (_) { setState(() => _pressed = false); _handleTap(); },
         onTapCancel: () => setState(() => _pressed = false),
-        onLongPress: widget.onLongPress,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 80),
           constraints: const BoxConstraints(
@@ -256,9 +329,21 @@ class _SOSRowState extends State<_SOSRow> {
                       style: EyerisText.rowLabel,
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      'Hold 2 sec to broadcast',
-                      style: EyerisText.rowSub,
+                    AnimatedBuilder(
+                      animation: _pulseAnimation,
+                      builder: (context, child) {
+                        return Text(
+                          _showTapAgainHint ? 'TAP AGAIN!' : 'Double tap to activate',
+                          style: EyerisText.rowSub.copyWith(
+                            color: _showTapAgainHint 
+                                ? EyerisColors.primary 
+                                : EyerisColors.textMuted,
+                            fontWeight: _showTapAgainHint 
+                                ? FontWeight.w700 
+                                : FontWeight.w400,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

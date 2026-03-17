@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:eyeris/core/app_theme.dart';
+import 'package:eyeris/core/routes.dart';
 import 'package:eyeris/ui/onboarding/steps/step1_vision.dart';
 import 'package:eyeris/ui/onboarding/steps/step2_interaction.dart';
 import 'package:eyeris/ui/onboarding/steps/step3_voice.dart';
+import 'package:eyeris/services/user_preferences_service.dart';
 
 // ─────────────────────────────────────────────
 // ONBOARDING PROFILE
@@ -86,7 +88,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (_step > 0) setState(() => _step--);
   }
 
-  void _onContinue() {
+  Future<void> _onContinue() async {
     if (!_canContinue) {
       setState(() => _showValidationError = true);
       if (context.mounted) {
@@ -111,19 +113,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         );
       }
     } else {
-      // Step 3 complete — hand profile to parent
-      widget.onComplete(
-        OnboardingProfile(
-          visionTypes:     _visionTypes,
-          interactionMode: _interactionMode,
-          voiceSpeed:      _voiceSpeed,
-        ),
+      // Step 3 complete — save profile and navigate
+      final profile = OnboardingProfile(
+        visionTypes:     _visionTypes,
+        interactionMode: _interactionMode,
+        voiceSpeed:      _voiceSpeed,
       );
+
+      // Save to persistent storage
+      await UserPreferencesService.instance.saveOnboardingProfile(
+        visionTypes: profile.visionTypes,
+        interactionMode: profile.interactionMode,
+        voiceSpeed: profile.voiceSpeed,
+      );
+
       if (context.mounted) {
         SemanticsService.sendAnnouncement(
           View.of(context),
           'Onboarding complete. Starting Eyeris.',
           TextDirection.ltr,
+        );
+      }
+
+      // Call parent callback
+      widget.onComplete(profile);
+
+      // Navigate to home
+      if (context.mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          EyerisRoutes.home,
+          (route) => false,
         );
       }
     }

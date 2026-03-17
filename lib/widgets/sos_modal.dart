@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/widgets/icons/eyeris_icons.dart';
+import 'package:eyeris/services/haptic_feedback_service.dart';
 
 // ─────────────────────────────────────────────
 // SOS MODAL
@@ -31,12 +32,15 @@ import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 /// Returns `true` if the user confirmed, `false` if cancelled,
 /// `null` if dismissed by other means (should not happen —
 /// barrierDismissible is false).
-Future<bool?> showSOSModal(BuildContext context) {
+/// 
+/// If [requireFinalConfirmation] is true, shows an additional
+/// "YES, SEND" confirmation after the initial "SEND SOS NOW" button.
+Future<bool?> showSOSModal(BuildContext context, {bool requireFinalConfirmation = true}) {
   return showDialog<bool>(
     context: context,
     barrierColor: const Color(0xEB000000), // 92% black
     barrierDismissible: false,
-    builder: (_) => const _SOSModalContent(),
+    builder: (_) => _SOSModalContent(requireFinalConfirmation: requireFinalConfirmation),
   );
 }
 
@@ -46,7 +50,9 @@ Future<bool?> showSOSModal(BuildContext context) {
 // ─────────────────────────────────────────────
 
 class _SOSModalContent extends StatefulWidget {
-  const _SOSModalContent();
+  final bool requireFinalConfirmation;
+  
+  const _SOSModalContent({this.requireFinalConfirmation = true});
 
   @override
   State<_SOSModalContent> createState() => _SOSModalContentState();
@@ -83,6 +89,28 @@ class _SOSModalContentState extends State<_SOSModalContent> {
   void dispose() {
     _confirmFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleConfirm(BuildContext context) async {
+    if (!widget.requireFinalConfirmation) {
+      // No final confirmation needed, send immediately
+      Navigator.of(context).pop(true);
+      return;
+    }
+
+    // Show final confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: const Color(0xEB000000),
+      barrierDismissible: false,
+      builder: (_) => const _FinalConfirmationDialog(),
+    );
+
+    if (confirmed == true && context.mounted) {
+      // User confirmed, trigger success haptic and close
+      HapticFeedbackService.instance.trigger(HapticPattern.success);
+      Navigator.of(context).pop(true);
+    }
   }
 
   @override
@@ -163,7 +191,7 @@ class _SOSModalContentState extends State<_SOSModalContent> {
                     focusNode: _confirmFocus,
                     semanticsLabel:
                         'Confirm. Send emergency SOS to all contacts now.',
-                    onTap: () => Navigator.of(context).pop(true),
+                    onTap: () => _handleConfirm(context),
                   ),
 
                   const SizedBox(height: EyerisSpacing.md),
@@ -256,6 +284,135 @@ class _SOSButtonState extends State<_SOSButton> {
                   letterSpacing: 0.10,
                   color: widget.textColor,
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// FINAL CONFIRMATION DIALOG
+// Last chance to cancel before sending SOS.
+// ─────────────────────────────────────────────
+
+class _FinalConfirmationDialog extends StatefulWidget {
+  const _FinalConfirmationDialog();
+
+  @override
+  State<_FinalConfirmationDialog> createState() => _FinalConfirmationDialogState();
+}
+
+class _FinalConfirmationDialogState extends State<_FinalConfirmationDialog> {
+  @override
+  void initState() {
+    super.initState();
+
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      if (context.mounted) {
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          'Final confirmation. Are you sure you want to send emergency SOS? '
+          'This cannot be undone. Double tap Yes Send, or No Cancel.',
+          TextDirection.ltr,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      scopesRoute: true,
+      explicitChildNodes: true,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Container(
+              padding: const EdgeInsets.all(EyerisSpacing.xxl),
+              decoration: BoxDecoration(
+                color: EyerisColors.surface,
+                border: Border.all(
+                  color: EyerisColors.danger,
+                  width: EyerisBorders.header,
+                ),
+                borderRadius: BorderRadius.circular(EyerisRadii.card),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Warning icon
+                  ExcludeSemantics(
+                    child: SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: EyerisIcons.warning(
+                        size: 56,
+                        color: EyerisColors.danger,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: EyerisSpacing.base),
+
+                  // Title
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      'FINAL CONFIRMATION',
+                      style: EyerisText.mono(
+                        size: 16,
+                        letterSpacing: 0.12,
+                        color: EyerisColors.danger,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
+                  const SizedBox(height: EyerisSpacing.md),
+
+                  // Warning text
+                  Text(
+                    'Are you sure you want to send emergency SOS?\n\n'
+                    'This cannot be undone.',
+                    style: EyerisText.mono(
+                      size: 14,
+                      weight: FontWeight.w600,
+                      color: EyerisColors.textPrimary,
+                      letterSpacing: 0.02,
+                      height: 1.8,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: EyerisSpacing.xxl),
+
+                  // YES, SEND button
+                  _SOSButton(
+                    label: 'YES, SEND',
+                    background: EyerisColors.danger,
+                    textColor: EyerisColors.white,
+                    semanticsLabel: 'Yes, send. Send emergency SOS now. This cannot be undone.',
+                    onTap: () => Navigator.of(context).pop(true),
+                  ),
+
+                  const SizedBox(height: EyerisSpacing.md),
+
+                  // NO, CANCEL button
+                  _SOSButton(
+                    label: 'NO, CANCEL',
+                    background: Colors.transparent,
+                    textColor: EyerisColors.textMuted,
+                    borderColor: EyerisColors.border,
+                    semanticsLabel: 'No, cancel. Do not send SOS.',
+                    onTap: () => Navigator.of(context).pop(false),
+                  ),
+                ],
               ),
             ),
           ),

@@ -6,6 +6,7 @@ import 'package:eyeris/widgets/mic_bar.dart';
 import 'package:eyeris/widgets/profile_avatar.dart' as profile;
 import 'package:eyeris/widgets/screen_header.dart';
 import 'package:eyeris/widgets/icons/eyeris_icons.dart';
+import 'package:eyeris/services/user_preferences_service.dart';
 
 // ─────────────────────────────────────────────
 // HOME SCREEN
@@ -128,7 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
           // ── Persistent mic bar — pinned to bottom
           MicBar(
             contextLabel: 'Speak to control',
-            contextHint: 'Press and hold to speak\na command',
+            contextHint: UserPreferencesService.instance.isVoiceFirst
+                ? 'Voice mode active\nPress and hold to speak'
+                : 'Press and hold to speak\na command',
             onPress: widget.onMicTap,
             onLongPress: widget.onMicLongPress,
             onPressStart: widget.onMicPressStart,

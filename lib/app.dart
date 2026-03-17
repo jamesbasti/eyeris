@@ -11,6 +11,7 @@ import 'package:eyeris/widgets/gesture_navigation.dart';
 import 'package:eyeris/ui/camera/color_detect_camera_screen.dart';
 import 'package:eyeris/ui/camera/scene_describe_camera_screen.dart';
 import 'package:eyeris/widgets/sos_modal.dart';
+import 'package:eyeris/widgets/sos_countdown_modal.dart';
 import 'package:eyeris/widgets/mic_bar.dart';
 import 'package:eyeris/models/voice_command.dart';
 import 'package:eyeris/services/voice/voice_control_manager.dart';
@@ -208,11 +209,25 @@ class _CommunicateRouteState extends State<_CommunicateRoute> {
   Future<void> _showSOS() async {
     if (_sosVisible) return;
     setState(() => _sosVisible = true);
+    
+    // Step 1: Show countdown modal
+    final countdownComplete = await showSOSCountdownModal(context);
+    if (!mounted) return;
+    
+    if (countdownComplete != true) {
+      // User cancelled during countdown
+      setState(() => _sosVisible = false);
+      return;
+    }
+    
+    // Step 2: Show confirmation modal
     final confirmed = await showSOSModal(context);
     if (!mounted) return;
     setState(() => _sosVisible = false);
+    
     if (confirmed == true) {
       // Phase 5: trigger SOS broadcast
+      debugPrint('SOS: Broadcasting emergency alert to contacts');
     }
   }
 

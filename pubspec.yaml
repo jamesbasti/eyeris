@@ -44,6 +44,8 @@ dependencies:
   flutter_native_splash: ^2.4.1  # For native splash screen
   speech_to_text: ^7.0.0  # On-device speech recognition
   connectivity_plus: ^6.0.3  # Network connectivity check
+  shared_preferences: ^2.2.2  # Local storage
+  record: ^6.0.0  # Audio recording
 
 dev_dependencies:
   flutter_test:
