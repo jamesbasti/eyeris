@@ -580,9 +580,16 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
       padding: const EdgeInsets.all(EyerisSpacing.md2),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(EyerisRadii.medium),
-        child: AspectRatio(
-          aspectRatio: _cameraController!.value.aspectRatio,
-          child: CameraPreview(_cameraController!),
+        child: OverflowBox(
+          alignment: Alignment.center,
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: _cameraController!.value.previewSize!.height,
+              height: _cameraController!.value.previewSize!.width,
+              child: CameraPreview(_cameraController!),
+            ),
+          ),
         ),
       ),
     );
