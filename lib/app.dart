@@ -6,10 +6,10 @@ import 'package:eyeris/ui/splash_screen.dart';
 import 'package:eyeris/ui/home_screen.dart';
 import 'package:eyeris/ui/dashboard/read_screen.dart';
 import 'package:eyeris/ui/dashboard/communicate_screen.dart';
-import 'package:eyeris/ui/dashboard/scene_describe.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
 import 'package:eyeris/widgets/gesture_navigation.dart';
 import 'package:eyeris/ui/camera/color_detect_camera_screen.dart';
+import 'package:eyeris/ui/camera/scene_describe_camera_screen.dart';
 import 'package:eyeris/widgets/sos_modal.dart';
 import 'package:eyeris/widgets/sos_countdown_modal.dart';
 import 'package:eyeris/widgets/mic_bar.dart';
@@ -241,9 +241,8 @@ class _SceneDescribeRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SceneDescribeScreen(
+    return SceneDescribeCameraScreen(
       onBack: () => Navigator.pop(context),
-      onMicTap: () {},
     );
   }
 }

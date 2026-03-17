@@ -122,21 +122,42 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
   }
 
   Future<void> _initCamera() async {
+    debugPrint('SceneDescribe: Starting camera initialization');
     final status = await Permission.camera.request();
+    debugPrint('SceneDescribe: Camera permission status: $status');
+    
     if (!mounted) return;
     if (status.isDenied || status.isPermanentlyDenied) {
       debugPrint('SceneDescribe: camera permission denied');
+      if (mounted) {
+        setState(() {
+          _state = _DescribeState.error;
+          _errorText = 'Camera permission denied. Please enable camera access in settings.';
+        });
+      }
       return;
     }
 
     try {
       final cameras = await availableCameras();
-      if (cameras.isEmpty) return;
+      debugPrint('SceneDescribe: Found ${cameras.length} cameras');
+      
+      if (cameras.isEmpty) {
+        debugPrint('SceneDescribe: No cameras available');
+        if (mounted) {
+          setState(() {
+            _state = _DescribeState.error;
+            _errorText = 'No camera found on this device.';
+          });
+        }
+        return;
+      }
 
       final back = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.back,
         orElse: () => cameras.first,
       );
+      debugPrint('SceneDescribe: Using camera: ${back.name}');
 
       _cameraController = CameraController(
         back,
@@ -144,16 +165,23 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
         enableAudio: false,
       );
 
+      debugPrint('SceneDescribe: Initializing camera controller');
       await _cameraController!.initialize();
+      debugPrint('SceneDescribe: Camera controller initialized successfully');
+      
       if (!mounted) return;
 
-      setState(() => _cameraReady = true);
-    } catch (e) {
+      setState(() {
+        _cameraReady = true;
+        debugPrint('SceneDescribe: Camera ready state set to true');
+      });
+    } catch (e, stackTrace) {
       debugPrint('SceneDescribe: camera init error — $e');
+      debugPrint('SceneDescribe: Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _state = _DescribeState.error;
-          _errorText = 'Could not access camera. Please try again.';
+          _errorText = 'Could not access camera: $e';
         });
       }
     }
@@ -580,17 +608,7 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
       padding: const EdgeInsets.all(EyerisSpacing.md2),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(EyerisRadii.medium),
-        child: OverflowBox(
-          alignment: Alignment.center,
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: _cameraController!.value.previewSize!.height,
-              height: _cameraController!.value.previewSize!.width,
-              child: CameraPreview(_cameraController!),
-            ),
-          ),
-        ),
+        child: CameraPreview(_cameraController!),
       ),
     );
   }
