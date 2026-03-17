@@ -137,7 +137,7 @@ class _HomeRouteState extends State<_HomeRoute> {
         onReadTap:        () => Navigator.pushNamed(context, EyerisRoutes.read),
         onNavigateTap:    () => Navigator.pushNamed(context, EyerisRoutes.sceneDescribe),
         onIdentifyTap:    () => Navigator.pushNamed(context, EyerisRoutes.colorDetect),
-        onCommunicateTap: () => Navigator.pushNamed(context, EyerisRoutes.communicate),
+        onEmergencySOSTap: () => Navigator.pushNamed(context, EyerisRoutes.communicate),
         onProfileTap:     () {},
         onMicTap:         () {},
         onMicPressStart:  _voiceControl.startListening,
