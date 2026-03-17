@@ -9,6 +9,7 @@ import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
 import 'package:eyeris/ui/profile_screen.dart';
 import 'package:eyeris/services/profile_notifier.dart';
+import 'package:eyeris/services/user_preferences_service.dart';
 
 // ─────────────────────────────────────────────
 // HOME SCREEN
@@ -28,7 +29,7 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onReadTap;
   final VoidCallback onNavigateTap;
   final VoidCallback onIdentifyTap;
-  final VoidCallback onCommunicateTap;
+  final VoidCallback onEmergencySOSTap;
   final VoidCallback onProfileTap;
   final VoidCallback onMicTap;
   final VoidCallback? onMicLongPress;
@@ -43,7 +44,7 @@ class HomeScreen extends StatefulWidget {
     this.onReadTap = _noop,
     this.onNavigateTap = _noop,
     this.onIdentifyTap = _noop,
-    this.onCommunicateTap = _noop,
+    this.onEmergencySOSTap = _noop,
     this.onProfileTap = _noop,
     this.onMicTap = _noop,
     this.onMicLongPress,
@@ -174,12 +175,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: widget.onIdentifyTap,
                   ),
                   _buildCard(
-                    label: 'Communicate',
-                    sublabel: 'Calls, messages\n& alerts',
-                    icon: EyerisIcons.communicate(size: 36),
-                    semanticsLabel: 'Communicate. Calls, messages and alerts.',
-                    semanticsHint: 'Double tap to open Communicate screen.',
-                    onTap: widget.onCommunicateTap,
+                    label: 'Emergency SOS',
+                    sublabel: 'Alert emergency\ncontacts',
+                    icon: EyerisIcons.warning(size: 36),
+                    badge: 'SOS',
+                    semanticsLabel: 'Emergency SOS. Alert emergency contacts with your location.',
+                    semanticsHint: 'Double tap to open Emergency SOS screen.',
+                    onTap: widget.onEmergencySOSTap,
                   ),
                 ],
               ),
@@ -189,7 +191,9 @@ class _HomeScreenState extends State<HomeScreen> {
           // ── Persistent mic bar — pinned to bottom
           MicBar(
             contextLabel: 'Speak to control',
-            contextHint: 'Press and hold to speak\na command',
+            contextHint: UserPreferencesService.instance.isVoiceFirst
+                ? 'Voice mode active\nPress and hold to speak'
+                : 'Press and hold to speak\na command',
             onPress: widget.onMicTap,
             onLongPress: widget.onMicLongPress,
             onPressStart: widget.onMicPressStart,

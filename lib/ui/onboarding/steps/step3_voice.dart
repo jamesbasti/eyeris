@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter/semantics.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/widgets/icons/eyeris_icons.dart';
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 // ─────────────────────────────────────────────
 // ONBOARDING STEP 3 — VOICE SETUP
@@ -40,6 +44,10 @@ class _Step3VoiceState extends State<Step3Voice>
   _MicTestState _micState = _MicTestState.idle;
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
+  
+  final AudioRecorder _recorder = AudioRecorder();
+  final AudioPlayer _player = AudioPlayer();
+  String? _recordingPath;
 
   @override
   void initState() {
@@ -56,37 +64,92 @@ class _Step3VoiceState extends State<Step3Voice>
   @override
   void dispose() {
     _pulseCtrl.dispose();
+    _recorder.dispose();
+    _player.dispose();
     super.dispose();
   }
 
   Future<void> _startMicTest() async {
-    setState(() => _micState = _MicTestState.listening);
-    _pulseCtrl.repeat(reverse: true);
-    HapticFeedback.mediumImpact();
+    try {
+      // Check microphone permission
+      if (!await _recorder.hasPermission()) {
+        if (context.mounted) {
+          SemanticsService.sendAnnouncement(
+            View.of(context),
+            'Microphone permission denied. Please enable it in settings.',
+            TextDirection.ltr,
+          );
+        }
+        return;
+      }
 
-    if (context.mounted) {
-      SemanticsService.sendAnnouncement(
-        View.of(context),
-        'Listening. Speak now.',
-        TextDirection.ltr,
+      setState(() => _micState = _MicTestState.listening);
+      _pulseCtrl.repeat(reverse: true);
+      HapticFeedback.mediumImpact();
+
+      if (context.mounted) {
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          'Listening. Speak now.',
+          TextDirection.ltr,
+        );
+      }
+
+      // Get temporary directory for recording
+      final tempDir = await getTemporaryDirectory();
+      _recordingPath = '${tempDir.path}/mic_test.m4a';
+
+      // Start recording
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: _recordingPath!,
       );
-    }
 
-    // Simulate 2-second recording window
-    await Future.delayed(const Duration(seconds: 2));
+      // Record for 2 seconds
+      await Future.delayed(const Duration(seconds: 2));
 
-    if (!mounted) return;
-    _pulseCtrl.stop();
-    _pulseCtrl.reset();
+      if (!mounted) return;
 
-    setState(() => _micState = _MicTestState.prompt);
-    if (context.mounted) {
-      SemanticsService.sendAnnouncement(
-        View.of(context),
-        'Did you hear your voice played back? '
-        'Double tap Yes or No.',
-        TextDirection.ltr,
-      );
+      // Stop recording
+      await _recorder.stop();
+      _pulseCtrl.stop();
+      _pulseCtrl.reset();
+
+      // Play back the recording
+      if (_recordingPath != null && File(_recordingPath!).existsSync()) {
+        await _player.play(DeviceFileSource(_recordingPath!));
+        
+        // Wait for playback to complete
+        await Future.delayed(const Duration(seconds: 2));
+      }
+
+      if (!mounted) return;
+      setState(() => _micState = _MicTestState.prompt);
+      if (context.mounted) {
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          'Did you hear your voice played back? '
+          'Double tap Yes or No.',
+          TextDirection.ltr,
+        );
+      }
+    } catch (e) {
+      debugPrint('Mic test error: $e');
+      if (!mounted) return;
+      _pulseCtrl.stop();
+      _pulseCtrl.reset();
+      setState(() => _micState = _MicTestState.idle);
+      if (context.mounted) {
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          'Microphone test failed. Please try again.',
+          TextDirection.ltr,
+        );
+      }
     }
   }
 

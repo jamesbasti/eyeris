@@ -3,7 +3,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:eyeris/core/app_theme.dart';
+import 'package:eyeris/core/routes.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
+import 'package:eyeris/services/user_preferences_service.dart';
 
 class SplashScreen extends StatefulWidget {
   final Function(OnboardingProfile)? onProfileUpdate;
@@ -18,32 +20,29 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => OnboardingScreen(
-            onComplete: (profile) {
-              // Update profile in app state
-              if (widget.onProfileUpdate != null) {
-                widget.onProfileUpdate!(profile);
-              }
-              Navigator.pushReplacementNamed(context, '/');
-            },
-          ),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
-    });
+    _initializeAndNavigate();
   }
 
-  
+  Future<void> _initializeAndNavigate() async {
+    // Initialize user preferences service
+    await UserPreferencesService.instance.initialize();
+
+    // Wait minimum 2 seconds for splash screen
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    // Check if onboarding is completed
+    final isOnboardingCompleted = UserPreferencesService.instance.isOnboardingCompleted;
+
+    // Navigate to appropriate screen
+    if (isOnboardingCompleted) {
+      Navigator.pushReplacementNamed(context, EyerisRoutes.home);
+    } else {
+      Navigator.pushReplacementNamed(context, EyerisRoutes.onboarding);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -6,6 +6,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter/foundation.dart';
+import 'package:eyeris/services/user_preferences_service.dart';
 import 'dart:io';
 
 /// Audio feedback types
@@ -30,6 +31,9 @@ class AudioFeedbackService {
     if (_isInitialized) return;
 
     try {
+      // Load speech rate from user preferences
+      _speechRate = UserPreferencesService.instance.ttsRate;
+      
       await _tts.setLanguage('en-US');
       await _tts.setSpeechRate(_speechRate);
       await _tts.setPitch(1.0);
