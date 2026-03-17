@@ -11,6 +11,7 @@
         "camera",
         "flutter",
         "flutter_dotenv",
+        "flutter_native_splash",
         "flutter_tts",
         "google_fonts",
         "google_ml_kit",
@@ -66,7 +67,7 @@
     },
     {
       "name": "audioplayers",
-      "version": "5.2.1",
+      "version": "6.6.0",
       "dependencies": [
         "audioplayers_android",
         "audioplayers_darwin",
@@ -311,7 +312,7 @@
     },
     {
       "name": "matcher",
-      "version": "0.12.17",
+      "version": "0.12.18",
       "dependencies": [
         "async",
         "meta",
@@ -322,7 +323,7 @@
     },
     {
       "name": "test_api",
-      "version": "0.7.7",
+      "version": "0.7.9",
       "dependencies": [
         "async",
         "boolean_selector",
@@ -358,7 +359,7 @@
     },
     {
       "name": "audioplayers_windows",
-      "version": "3.1.0",
+      "version": "4.3.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -366,18 +367,19 @@
     },
     {
       "name": "audioplayers_web",
-      "version": "4.1.0",
+      "version": "5.2.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter",
         "flutter_web_plugins",
-        "js"
+        "web"
       ]
     },
     {
       "name": "audioplayers_platform_interface",
-      "version": "6.1.0",
+      "version": "7.1.1",
       "dependencies": [
+        "collection",
         "flutter",
         "meta",
         "plugin_platform_interface"
@@ -385,7 +387,7 @@
     },
     {
       "name": "audioplayers_linux",
-      "version": "3.1.0",
+      "version": "4.2.1",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -393,7 +395,7 @@
     },
     {
       "name": "audioplayers_darwin",
-      "version": "5.0.2",
+      "version": "6.4.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -401,7 +403,7 @@
     },
     {
       "name": "audioplayers_android",
-      "version": "4.0.3",
+      "version": "5.2.1",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -718,14 +720,14 @@
     },
     {
       "name": "material_color_utilities",
-      "version": "0.11.1",
+      "version": "0.13.0",
       "dependencies": [
         "collection"
       ]
     },
     {
       "name": "characters",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "dependencies": []
     },
     {
@@ -798,13 +800,6 @@
       "name": "fixnum",
       "version": "1.1.1",
       "dependencies": []
-    },
-    {
-      "name": "js",
-      "version": "0.6.7",
-      "dependencies": [
-        "meta"
-      ]
     },
     {
       "name": "platform",
@@ -927,6 +922,52 @@
         "file",
         "path",
         "string_scanner"
+      ]
+    },
+    {
+      "name": "flutter_native_splash",
+      "version": "2.4.7",
+      "dependencies": [
+        "ansicolor",
+        "args",
+        "flutter",
+        "flutter_web_plugins",
+        "html",
+        "image",
+        "meta",
+        "path",
+        "universal_io",
+        "xml",
+        "yaml"
+      ]
+    },
+    {
+      "name": "html",
+      "version": "0.15.6",
+      "dependencies": [
+        "csslib",
+        "source_span"
+      ]
+    },
+    {
+      "name": "ansicolor",
+      "version": "2.0.3",
+      "dependencies": []
+    },
+    {
+      "name": "csslib",
+      "version": "1.0.2",
+      "dependencies": [
+        "source_span"
+      ]
+    },
+    {
+      "name": "universal_io",
+      "version": "2.3.1",
+      "dependencies": [
+        "collection",
+        "meta",
+        "typed_data"
       ]
     }
   ],

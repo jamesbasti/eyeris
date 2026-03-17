@@ -40,7 +40,8 @@ dependencies:
   path: ^1.9.0
   flutter_tts: ^4.0.2
   google_ml_kit: ^0.16.0
-  audioplayers: ^5.2.1  # For playing natural voice audio
+  audioplayers: ^6.6.0  # For playing natural voice audio
+  flutter_native_splash: ^2.4.1  # For native splash screen
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,46 @@ flutter:
     - assets/eyeris_icon.png
     - .env
     - assets/ml/
+
+# Flutter Native Splash configuration
+flutter_native_splash:
+  # The color parameter sets the background color of the splash screen
+  color: "#ffffff"
+  
+  # The image parameter sets the splash screen icon image
+  image: assets/eyeris_icon.png
+  
+  # The branding parameter sets the splash screen branding image
+  # branding: assets/branding.png
+  
+  # The branding_mode parameter sets the branding image mode
+  # branding_mode: bottom
+  
+  # The android_gravity parameter sets the gravity of the splash screen image
+  android_gravity: center
+  
+  # The ios_content_mode parameter sets the content mode of the splash screen image
+  ios_content_mode: center
+  
+  # The web_image_mode parameter sets the web image mode
+  web_image_mode: center
+  
+  # The android_12 parameter sets the Android 12+ splash screen
+  android_12:
+    # The color parameter sets the background color of the splash screen
+    color: "#ffffff"
+    
+    # The image parameter sets the splash screen icon image
+    image: assets/eyeris_icon.png
+    
+    # The icon_background_color parameter sets the icon background color
+    icon_background_color: "#ffffff"
+    
+    # The image_dark parameter sets the dark mode splash screen icon image
+    # image_dark: assets/eyeris_icon.png
+    
+    # The color_dark parameter sets the dark mode background color
+    # color_dark: "#000000"
   
   # To add assets to your application, add an assets section, like this:
   # assets:
