@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -87,6 +88,32 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
     await _flutterTts.setLanguage('en-US');
     await _flutterTts.setSpeechRate(0.45);
     await _flutterTts.setPitch(1.0);
+
+    if (Platform.isIOS) {
+      try {
+        // Set Evan enhanced voice using the display name
+        await _flutterTts.setVoice({
+          'name': 'Evan (Enhanced)',
+          'locale': 'en-US'
+        });
+      } catch (e) {
+        // Voice setting failed, will use default
+      }
+    } else if (Platform.isAndroid) {
+      try {
+        final engines = await _flutterTts.getEngines as List;
+        final google = engines.firstWhere(
+          (e) => e.toString().toLowerCase().contains('google'),
+          orElse: () => '',
+        );
+        if (google.toString().isNotEmpty) {
+          await _flutterTts.setEngine(google.toString());
+        }
+      } catch (e) {
+        // Engine selection failed, will use default
+      }
+    }
+
     _flutterTts.setCompletionHandler(() {
       if (mounted && _state == _DescribeState.speaking) {
         setState(() => _state = _DescribeState.idle);

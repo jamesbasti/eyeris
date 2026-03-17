@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/services/color_service.dart';
 import 'package:eyeris/services/openai_service.dart';
+import 'dart:io';
 
 // ─────────────────────────────────────────────
 // COLOR DETECT CAMERA SCREEN
@@ -59,6 +60,37 @@ class _ColorDetectCameraScreenState extends State<ColorDetectCameraScreen> {
     await _tts.setLanguage('en-US');
     await _tts.setSpeechRate(0.45);
     await _tts.setPitch(1.0);
+
+    if (Platform.isIOS) {
+      try {
+        // Set Evan enhanced voice using the display name
+        await _tts.setVoice({
+          'name': 'Evan (Enhanced)',
+          'locale': 'en-US'
+        });
+      } catch (e) {
+        // Voice setting failed, will use default
+      }
+    } else if (Platform.isAndroid) {
+      try {
+        final engines = await _tts.getEngines as List;
+        final google = engines.firstWhere(
+          (e) => e.toString().toLowerCase().contains('google'),
+          orElse: () => '',
+        );
+        if (google.toString().isNotEmpty) {
+          await _tts.setEngine(google.toString());
+        }
+      } catch (e) {
+        // Engine selection failed, will use default
+      }
+    }
+
+    _tts.setCompletionHandler(() {
+      if (mounted && _state == _DetectState.result) {
+        setState(() => _state = _DetectState.idle);
+      }
+    });
   }
 
   Future<void> _initCamera() async {
