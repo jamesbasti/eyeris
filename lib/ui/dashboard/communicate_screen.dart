@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:eyeris/core/app_theme.dart';
-import 'package:eyeris/widgets/action_row.dart';
 import 'package:eyeris/widgets/gesture_layer.dart';
 import 'package:eyeris/widgets/gesture_navigation.dart';
 import 'package:eyeris/widgets/mic_bar.dart';
@@ -12,30 +11,25 @@ import 'package:eyeris/services/double_tap_detector.dart';
 import 'package:eyeris/services/haptic_feedback_service.dart';
 
 // ─────────────────────────────────────────────
-// COMMUNICATE SCREEN (Phase 3 — UI shell only)
+// COMMUNICATE SCREEN (Emergency SOS only)
 //
 // Layout:
-//   ScreenHeader "COMMUNICATE" + back button
+//   ScreenHeader "EMERGENCY SOS" + back button
 //   ScrollView:
-//     Section "CONNECT"
-//       ActionRow: Voice Call
-//       ActionRow: Messages
-//     Section "ALERTS"
+//     Section "EMERGENCY ALERTS"
 //       ActionRow: Emergency SOS  ← danger variant
-//   MicBar  "SAY 'CALL [NAME]'"
+//   MicBar  "SAY 'EMERGENCY'"
 //
-// SOS long-press will trigger SOSModal in Phase 4.
+// SOS double-tap triggers countdown → confirmation modal.
 // ─────────────────────────────────────────────
 
 class CommunicateScreen extends StatefulWidget {
   final VoidCallback onBack;
-  final VoidCallback onVoiceCallTap;
-  final VoidCallback onMessagesTap;
 
-  /// Short tap on SOS row — announces hold instruction.
+  /// Short tap on SOS row — announces double-tap instruction.
   final VoidCallback onSOSTap;
 
-  /// Long press on SOS row — triggers confirmation modal.
+  /// Double tap on SOS row — triggers countdown modal.
   final VoidCallback onSOSLongPress;
 
   final VoidCallback onMicTap;
@@ -46,8 +40,6 @@ class CommunicateScreen extends StatefulWidget {
   const CommunicateScreen({
     super.key,
     this.onBack          = _noop,
-    this.onVoiceCallTap  = _noop,
-    this.onMessagesTap   = _noop,
     this.onSOSTap        = sosDefaultTap,
     this.onSOSLongPress  = _noop,
     this.onMicTap        = _noop,
@@ -58,15 +50,15 @@ class CommunicateScreen extends StatefulWidget {
 
   static void _noop() {}
 
-  /// Default short-tap behaviour: announces the hold instruction
-  /// so the user understands the long-press requirement.
+  /// Default short-tap behaviour: announces the double-tap instruction
+  /// so the user understands the double-tap requirement.
   /// Public so the Navigator shell can reference it without
   /// duplicating the announcement string.
   static void sosDefaultTap() {
     SemanticsService.sendAnnouncement(
       // Use a default view since this is a static method
       WidgetsBinding.instance.platformDispatcher.views.first,
-      'Hold for 2 seconds to activate Emergency SOS.',
+      'Double tap to activate Emergency SOS.',
       TextDirection.ltr,
     );
   }
@@ -83,8 +75,7 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
       if (context.mounted) {
         SemanticsService.sendAnnouncement(
           View.of(context),
-          'Communicate screen. 3 options: Voice Call, Messages, '
-          'Emergency SOS.',
+          'Emergency SOS screen. Double tap to activate emergency alert.',
           TextDirection.ltr,
         );
       }
@@ -104,7 +95,7 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
               children: [
                 // ── Screen header
                 ScreenHeader(
-                  title: 'Communicate',
+                  title: 'EMERGENCY SOS',
                   onBack: widget.onBack,
                 ),
               ],
@@ -115,40 +106,13 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
             child: GestureLayer(
               onBack:     widget.gestureConfig?.onBack,
               onVoice:    widget.gestureConfig?.onVoice,
-              screenName: widget.gestureConfig?.screenName ?? 'Communicate screen',
+              screenName: widget.gestureConfig?.screenName ?? 'Emergency SOS screen',
               options:    widget.gestureConfig?.options ??
-                  ['Voice Call', 'Messages', 'Emergency SOS'],
+                  ['Emergency SOS'],
               child: ListView(
               padding: const EdgeInsets.all(EyerisSpacing.md2),
               children: [
-                const SectionLabel('Connect'),
-                const SizedBox(height: EyerisSpacing.sm),
-
-                ActionRow(
-                  label: 'Voice Call',
-                  sublabel: 'Contacts + speed dial',
-                  icon: EyerisIcons.phone(size: 28),
-                  onPress: widget.onVoiceCallTap,
-                  semanticsLabel:
-                      'Voice call. Opens contacts list for calling. '
-                      'Speed dial available.',
-                  semanticsHint: 'Double tap to open contacts.',
-                ),
-                const SizedBox(height: EyerisSpacing.sm),
-
-                ActionRow(
-                  label: 'Messages',
-                  sublabel: 'Read aloud + dictate reply',
-                  icon: EyerisIcons.message(size: 28),
-                  onPress: widget.onMessagesTap,
-                  semanticsLabel:
-                      'Messages. Reads your messages aloud and lets you '
-                      'dictate replies.',
-                  semanticsHint: 'Double tap to open messages.',
-                ),
-                const SizedBox(height: EyerisSpacing.md2),
-
-                const SectionLabel('Alerts'),
+                const SectionLabel('Emergency Alert'),
                 const SizedBox(height: EyerisSpacing.sm),
 
                 _SOSRow(
@@ -161,8 +125,8 @@ class _CommunicateScreenState extends State<CommunicateScreen> {
           ),
 
           MicBar(
-            contextLabel: "Say 'Call [Name]'",
-            contextHint: 'Or dictate a message',
+            contextLabel: "Say 'Emergency'",
+            contextHint: 'Or say a contact name',
             onPress: widget.onMicTap,
             onLongPress: widget.onMicLongPress,
             state: widget.micState,

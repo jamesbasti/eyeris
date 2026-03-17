@@ -235,16 +235,15 @@ class _CommunicateRouteState extends State<_CommunicateRoute> {
   Widget build(BuildContext context) {
     return CommunicateScreen(
       onBack:         () => Navigator.pop(context),
-      onVoiceCallTap: () {},
-      onMessagesTap:  () {},
       onSOSTap:       CommunicateScreen.sosDefaultTap,
       onSOSLongPress: _showSOS,
       onMicTap:       () {},
+      micState:       MicBarState.idle,
       gestureConfig: GestureLayerConfig(
         onBack:     () => Navigator.pop(context),
         onVoice:    () {},
         screenName: 'Communicate screen',
-        options:    ['Voice Call', 'Messages', 'Emergency SOS'],
+        options:    ['Emergency SOS'],
       ),
     );
   }
