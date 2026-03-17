@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/ui/home_screen.dart';
 import 'package:eyeris/ui/dashboard/read_screen.dart';
-import 'package:eyeris/ui/dashboard/navigate_screen.dart';
-import 'package:eyeris/ui/dashboard/identify_screen.dart';
+import 'package:eyeris/ui/dashboard/scene_describe.dart';
+import 'package:eyeris/ui/dashboard/color_detect.dart';
 import 'package:eyeris/ui/dashboard/communicate_screen.dart';
 
 List<({SemanticsNode node, Rect rect})> orderedButtonNodes(WidgetTester tester) {
@@ -86,9 +86,15 @@ void main() {
     });
   });
 
-  group('NavigateScreen focus order', () {
+  group('SceneDescribeScreen focus order', () {
     testWidgets('back button is first focusable element', (tester) async {
-      await tester.pumpWidget(eyerisApp(NavigateScreen(onBack: () {})));
+      await tester.pumpWidget(eyerisApp(SceneDescribeScreen(
+        onBack: () {},
+        onWalkModeTap: () {},
+        onIndoorMapTap: () {},
+        onNearestBusTap: () {},
+        onMicTap: () {},
+      )));
       await tester.pump();
       final btns = orderedButtonNodes(tester);
       final backIdx = btns.indexWhere(
@@ -98,7 +104,13 @@ void main() {
     });
 
     testWidgets('no empty labels', (tester) async {
-      await tester.pumpWidget(eyerisApp(NavigateScreen(onBack: () {})));
+      await tester.pumpWidget(eyerisApp(SceneDescribeScreen(
+        onBack: () {},
+        onWalkModeTap: () {},
+        onIndoorMapTap: () {},
+        onNearestBusTap: () {},
+        onMicTap: () {},
+      )));
       await tester.pump();
       for (final b in orderedButtonNodes(tester)) {
         expect(b.node.label.trim().isNotEmpty, isTrue);
@@ -106,9 +118,15 @@ void main() {
     });
   });
 
-  group('IdentifyScreen focus order', () {
+  group('ColorDetectScreen focus order', () {
     testWidgets('back button is first focusable element', (tester) async {
-      await tester.pumpWidget(eyerisApp(IdentifyScreen(onBack: () {})));
+      await tester.pumpWidget(eyerisApp(ColorDetectScreen(
+        onBack: () {},
+        onSceneDescribeTap: () {},
+        onFindPersonTap: () {},
+        onColorDetectTap: () {},
+        onMicTap: () {},
+      )));
       await tester.pump();
       final btns = orderedButtonNodes(tester);
       final backIdx = btns.indexWhere(

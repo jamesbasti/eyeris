@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:eyeris/core/app_theme.dart';
-import 'package:eyeris/widgets/action_row.dart';
 import 'package:eyeris/widgets/mic_bar.dart';
 import 'package:eyeris/widgets/screen_header.dart';
-import 'package:eyeris/widgets/section_label.dart';
-import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 import 'package:eyeris/ui/camera/text_camera_screen.dart';
 import 'dart:developer' as developer;
 
@@ -65,14 +62,16 @@ class _ReadScreenState extends State<ReadScreen> {
   void initState() {
     super.initState();
     _initializeTts();
+    // Go directly to camera after initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) {
-        // Use the modern sendAnnouncement API with correct signature
+        setState(() {
+          _showTextCamera = true;
+        });
         SemanticsService.sendAnnouncement(
-          View.of(context), // FlutterView parameter
-          'Read screen. 4 options: Point and Read, Scan Document, '
-          'Reading Speed, Voice and Language.',
-          TextDirection.ltr, // TextDirection parameter
+          View.of(context),
+          'Read screen. Camera ready for text recognition.',
+          TextDirection.ltr,
         );
       }
     });
@@ -136,18 +135,11 @@ class _ReadScreenState extends State<ReadScreen> {
     });
   }
 
-  void _onPointAndReadTap() {
-    setState(() {
-      _showTextCamera = true;
-    });
-  }
-
+  
   void _onTextCameraBack() {
     // Stop any ongoing speech when going back
     _flutterTts.stop();
-    setState(() {
-      _showTextCamera = false;
-    });
+    widget.onBack();
   }
 
   @override
@@ -182,53 +174,7 @@ class _ReadScreenState extends State<ReadScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(EyerisSpacing.md2),
                   children: [
-                    const SectionLabel('Capture'),
-                    const SizedBox(height: EyerisSpacing.sm),
-
-                    ActionRow(
-                      label: 'Point & Read',
-                      sublabel: 'Camera → instant speech',
-                      icon: EyerisIcons.camera(size: 28),
-                      onPress: _onPointAndReadTap,
-                      semanticsLabel:
-                          'Point and read. Aims camera at text and reads it aloud.',
-                      semanticsHint: 'Double tap to open camera.',
-                    ),
-                    const SizedBox(height: EyerisSpacing.sm),
-
-                    ActionRow(
-                      label: 'Scan Document',
-                      sublabel: 'PDF, photo, receipt',
-                      icon: EyerisIcons.document(size: 28),
-                      onPress: widget.onScanDocumentTap,
-                      semanticsLabel:
-                          'Scan document. Convert PDF, photos, receipts to text.',
-                      semanticsHint: 'Double tap to scan document.',
-                    ),
-                    const SizedBox(height: EyerisSpacing.md2),
-
-                    const SectionLabel('Settings'),
-                    const SizedBox(height: EyerisSpacing.sm),
-
-                    ActionRow(
-                      label: 'Reading Speed',
-                      sublabel: 'Slow · Normal · Fast',
-                      icon: EyerisIcons.clock(size: 28),
-                      onPress: widget.onReadingSpeedTap,
-                      semanticsLabel:
-                          'Reading speed. Currently set to normal. Double tap to change.',
-                    ),
-                    const SizedBox(height: EyerisSpacing.sm),
-
-                    ActionRow(
-                      label: 'Voice & Language',
-                      sublabel: 'English · Filipino · more',
-                      icon: EyerisIcons.voice(size: 28),
-                      onPress: widget.onVoiceLanguageTap,
-                      semanticsLabel:
-                          'Voice and language settings. Currently English. '
-                          'Double tap to change.',
-                    ),
+                    // No action rows needed - going directly to camera
                   ],
                 ),
               ),

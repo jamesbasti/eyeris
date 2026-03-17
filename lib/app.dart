@@ -5,8 +5,6 @@ import 'package:eyeris/core/routes.dart';
 import 'package:eyeris/ui/splash_screen.dart';
 import 'package:eyeris/ui/home_screen.dart';
 import 'package:eyeris/ui/dashboard/read_screen.dart';
-import 'package:eyeris/ui/dashboard/navigate_screen.dart';
-import 'package:eyeris/ui/dashboard/identify_screen.dart';
 import 'package:eyeris/ui/dashboard/communicate_screen.dart';
 import 'package:eyeris/ui/onboarding/onboarding_screen.dart';
 import 'package:eyeris/widgets/gesture_navigation.dart';
@@ -41,10 +39,6 @@ class EyerisApp extends StatelessWidget {
         return const _HomeRoute();
       case EyerisRoutes.read:
         return const _ReadRoute();
-      case EyerisRoutes.navigate:
-        return const _NavigateRoute();
-      case EyerisRoutes.identify:
-        return const _IdentifyRoute();
       case EyerisRoutes.communicate:
         return const _CommunicateRoute();
       case EyerisRoutes.onboarding:
@@ -71,8 +65,8 @@ class _HomeRoute extends StatelessWidget {
       },
       child: HomeScreen(
         onReadTap:        () => Navigator.pushNamed(context, EyerisRoutes.read),
-        onNavigateTap:    () => Navigator.pushNamed(context, EyerisRoutes.navigate),
-        onIdentifyTap:    () => Navigator.pushNamed(context, EyerisRoutes.identify),
+        onNavigateTap:    () => Navigator.pushNamed(context, EyerisRoutes.sceneDescribe),
+        onIdentifyTap:    () => Navigator.pushNamed(context, EyerisRoutes.colorDetect),
         onCommunicateTap: () => Navigator.pushNamed(context, EyerisRoutes.communicate),
         onProfileTap:     () {},
         onMicTap:         () {},
@@ -106,47 +100,6 @@ class _ReadRoute extends StatelessWidget {
   }
 }
 
-class _NavigateRoute extends StatelessWidget {
-  const _NavigateRoute();
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigateScreen(
-      onBack:          () => Navigator.pop(context),
-      onWalkModeTap:   () {},
-      onIndoorMapTap:  () {},
-      onNearestBusTap: () {},
-      onMicTap:        () {},
-      gestureConfig: GestureLayerConfig(
-        onBack:     () => Navigator.pop(context),
-        onVoice:    () {},
-        screenName: 'Navigate screen',
-        options:    ['Walk Mode', 'Indoor Map', 'Nearest Bus'],
-      ),
-    );
-  }
-}
-
-class _IdentifyRoute extends StatelessWidget {
-  const _IdentifyRoute();
-
-  @override
-  Widget build(BuildContext context) {
-    return IdentifyScreen(
-      onBack:             () => Navigator.pop(context),
-      onSceneDescribeTap: () => Navigator.pushNamed(context, EyerisRoutes.sceneDescribe),
-      onFindPersonTap:    () {},
-      onColorDetectTap:   () => Navigator.pushNamed(context, EyerisRoutes.colorDetect),
-      onMicTap:           () {},
-      gestureConfig: GestureLayerConfig(
-        onBack:     () => Navigator.pop(context),
-        onVoice:    () {},
-        screenName: 'Identify screen',
-        options:    ['Scene Describe', 'Find Person', 'Color Detect'],
-      ),
-    );
-  }
-}
 
 class _ColorDetectRoute extends StatelessWidget {
   const _ColorDetectRoute();

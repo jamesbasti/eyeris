@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/ui/home_screen.dart';
 import 'package:eyeris/ui/dashboard/read_screen.dart';
-import 'package:eyeris/ui/dashboard/navigate_screen.dart';
-import 'package:eyeris/ui/dashboard/identify_screen.dart';
+import 'package:eyeris/ui/dashboard/scene_describe.dart';
+import 'package:eyeris/ui/dashboard/color_detect.dart';
 import 'package:eyeris/ui/dashboard/communicate_screen.dart';
 import 'package:eyeris/widgets/action_row.dart';
 import 'package:eyeris/widgets/hub_card.dart';
@@ -136,9 +136,15 @@ void main() {
     });
   });
 
-  group('NavigateScreen semantics', () {
+  group('SceneDescribeScreen semantics', () {
     testWidgets('>=3 labelled buttons, all descriptive', (tester) async {
-      await tester.pumpWidget(eyerisApp(const NavigateScreen()));
+      await tester.pumpWidget(eyerisApp(SceneDescribeScreen(
+        onBack: () {},
+        onWalkModeTap: () {},
+        onIndoorMapTap: () {},
+        onNearestBusTap: () {},
+        onMicTap: () {},
+      )));
       await tester.pump();
       final btns = findButtonNodes(tester).where((n) => n.label.isNotEmpty).toList();
       expect(btns.length, greaterThanOrEqualTo(3));
@@ -148,9 +154,15 @@ void main() {
     });
   });
 
-  group('IdentifyScreen semantics', () {
+  group('ColorDetectScreen semantics', () {
     testWidgets('>=3 labelled buttons, all descriptive', (tester) async {
-      await tester.pumpWidget(eyerisApp(const IdentifyScreen()));
+      await tester.pumpWidget(eyerisApp(ColorDetectScreen(
+        onBack: () {},
+        onSceneDescribeTap: () {},
+        onFindPersonTap: () {},
+        onColorDetectTap: () {},
+        onMicTap: () {},
+      )));
       await tester.pump();
       final btns = findButtonNodes(tester).where((n) => n.label.isNotEmpty).toList();
       expect(btns.length, greaterThanOrEqualTo(3));

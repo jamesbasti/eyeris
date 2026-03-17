@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (context.mounted) {
         SemanticsService.sendAnnouncement(
           View.of(context),
-          'Eyeris home. 4 options available: Read, Navigate, Identify, Communicate.',
+          'Eyeris home. 4 options available: Read, Scene Describe, Color Detect, Communicate.',
           TextDirection.ltr,
         );
       }
@@ -93,19 +93,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: widget.onReadTap,
                   ),
                   _buildCard(
-                    label: 'Navigate',
-                    sublabel: 'Indoor &\noutdoor',
-                    icon: EyerisIcons.navigate(size: 36),
-                    semanticsLabel: 'Navigate. Indoor and outdoor guidance.',
-                    semanticsHint: 'Double tap to open Navigate screen.',
+                    label: 'Scene Describe',
+                    sublabel: 'Describe what\nyou see',
+                    icon: EyerisIcons.identify(size: 36),
+                    semanticsLabel: 'Scene Describe. Describe what you see.',
+                    semanticsHint: 'Double tap to open Scene Describe screen.',
                     onTap: widget.onNavigateTap,
                   ),
                   _buildCard(
-                    label: 'Identify',
-                    sublabel: 'Objects, faces\n& colors',
-                    icon: EyerisIcons.identify(size: 36),
-                    semanticsLabel: 'Identify. Describe objects, faces and colors.',
-                    semanticsHint: 'Double tap to open Identify screen.',
+                    label: 'Color Detect',
+                    sublabel: 'Identify\ncolors',
+                    icon: EyerisIcons.colorDetect(size: 36),
+                    semanticsLabel: 'Color Detect. Identify colors.',
+                    semanticsHint: 'Double tap to open Color Detect screen.',
                     onTap: widget.onIdentifyTap,
                   ),
                   _buildCard(

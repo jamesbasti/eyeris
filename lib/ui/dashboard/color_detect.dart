@@ -10,49 +10,46 @@ import 'package:eyeris/widgets/section_label.dart';
 import 'package:eyeris/widgets/icons/eyeris_icons.dart';
 
 // ─────────────────────────────────────────────
-// NAVIGATE SCREEN  (Phase 3 — UI shell only)
+// COLOR DETECT SCREEN  (Phase 3 — UI shell only)
 //
 // Layout:
 //   AppStatusBar
-//   ScreenHeader "NAVIGATE" + back button
+//   ScreenHeader "COLOR DETECT" + back button
 //   ScrollView:
-//     Section "MODE"
-//       ActionRow: Walk Mode
-//       ActionRow: Indoor Map
-//     Section "QUICK ACTIONS"
-//       ActionRow: Nearest Bus
-//   MicBar  "SAY 'TAKE ME TO…'"
+//     Section "CAMERA ACTIONS"
+//       ActionRow: Color Detect
+//   MicBar  "SAY 'WHAT COLOR IS THIS'"
+//
+// Note: "Color Detect" pushes to ColorDetectCameraScreen
 // ─────────────────────────────────────────────
 
-class NavigateScreen extends StatefulWidget {
+class ColorDetectScreen extends StatefulWidget {
   final VoidCallback onBack;
-  final VoidCallback onWalkModeTap;
-  final VoidCallback onIndoorMapTap;
-  final VoidCallback onNearestBusTap;
+  final VoidCallback onSceneDescribeTap;
+  final VoidCallback onFindPersonTap;
+  final VoidCallback onColorDetectTap;
   final VoidCallback onMicTap;
   final VoidCallback? onMicLongPress;
   final MicBarState micState;
   final GestureLayerConfig? gestureConfig;
 
-  const NavigateScreen({
+  const ColorDetectScreen({
     super.key,
-    this.onBack          = _noop,
-    this.onWalkModeTap   = _noop,
-    this.onIndoorMapTap  = _noop,
-    this.onNearestBusTap = _noop,
-    this.onMicTap        = _noop,
+    required this.onBack,
+    required this.onSceneDescribeTap,
+    required this.onFindPersonTap,
+    required this.onColorDetectTap,
+    required this.onMicTap,
     this.onMicLongPress,
-    this.micState        = MicBarState.idle,
+    this.micState = MicBarState.idle,
     this.gestureConfig,
   });
 
-  static void _noop() {}
-
   @override
-  State<NavigateScreen> createState() => _NavigateScreenState();
+  State<ColorDetectScreen> createState() => _ColorDetectScreenState();
 }
 
-class _NavigateScreenState extends State<NavigateScreen> {
+class _ColorDetectScreenState extends State<ColorDetectScreen> {
   @override
   void initState() {
     super.initState();
@@ -60,7 +57,7 @@ class _NavigateScreenState extends State<NavigateScreen> {
       if (context.mounted) {
         SemanticsService.sendAnnouncement(
           View.of(context),
-          'Navigate screen. 3 options: Walk Mode, Indoor Map, Nearest Bus.',
+          'Color Detect screen. Camera ready to identify colors.',
           TextDirection.ltr,
         );
       }
@@ -80,7 +77,7 @@ class _NavigateScreenState extends State<NavigateScreen> {
               children: [
                 // ── Screen header
                 ScreenHeader(
-                  title: 'Navigate',
+                  title: 'Identify',
                   onBack: widget.onBack,
                 ),
               ],
@@ -91,48 +88,45 @@ class _NavigateScreenState extends State<NavigateScreen> {
             child: GestureLayer(
               onBack:     widget.gestureConfig?.onBack,
               onVoice:    widget.gestureConfig?.onVoice,
-              screenName: widget.gestureConfig?.screenName ?? 'Navigate screen',
+              screenName: widget.gestureConfig?.screenName ?? 'Identify screen',
               options:    widget.gestureConfig?.options ??
-                  ['Walk Mode', 'Indoor Map', 'Nearest Bus'],
+                  ['Scene Describe', 'Find Person', 'Color Detect'],
               child: ListView(
               padding: const EdgeInsets.all(EyerisSpacing.md2),
               children: [
-                const SectionLabel('Mode'),
+                const SectionLabel('Describe'),
                 const SizedBox(height: EyerisSpacing.sm),
 
                 ActionRow(
-                  label: 'Walk Mode',
-                  sublabel: 'Haptic + audio turns',
-                  icon: EyerisIcons.walk(size: 28),
-                  onPress: widget.onWalkModeTap,
+                  label: 'Scene Describe',
+                  sublabel: 'Full AI description',
+                  icon: EyerisIcons.camera(size: 28),
+                  onPress: widget.onSceneDescribeTap,
                   semanticsLabel:
-                      'Walk mode. Provides haptic and audio turn guidance.',
-                  semanticsHint: 'Double tap to toggle walk mode.',
+                      'Scene describe. Get full AI description of surroundings.',
+                  semanticsHint: 'Double tap to start camera.',
                 ),
                 const SizedBox(height: EyerisSpacing.sm),
 
                 ActionRow(
-                  label: 'Indoor Map',
-                  sublabel: 'Obstacle detection on',
-                  icon: EyerisIcons.indoorMap(size: 28),
-                  onPress: widget.onIndoorMapTap,
+                  label: 'Find Person',
+                  sublabel: 'Face recognition',
+                  icon: EyerisIcons.person(size: 28),
+                  onPress: widget.onFindPersonTap,
                   semanticsLabel:
-                      'Indoor map. Navigate indoors with obstacle detection.',
-                  semanticsHint: 'Double tap to open indoor map.',
+                      'Find person. Use face recognition to locate people.',
+                  semanticsHint: 'Double tap to start face detection.',
                 ),
-                const SizedBox(height: EyerisSpacing.md2),
-
-                const SectionLabel('Quick Actions'),
                 const SizedBox(height: EyerisSpacing.sm),
 
                 ActionRow(
-                  label: 'Nearest Bus',
-                  sublabel: 'Transit + live arrival',
-                  icon: EyerisIcons.bus(size: 28),
-                  onPress: widget.onNearestBusTap,
+                  label: 'Color Detect',
+                  sublabel: 'Name any color aloud',
+                  icon: EyerisIcons.colorDetect(size: 28),
+                  onPress: widget.onColorDetectTap,
                   semanticsLabel:
-                      'Nearest bus. Find transit options with live arrivals.',
-                  semanticsHint: 'Double tap to find nearest bus stop.',
+                      'Color detect. Point camera to identify colors.',
+                  semanticsHint: 'Double tap to start color detection.',
                 ),
               ],
             ),
@@ -140,8 +134,8 @@ class _NavigateScreenState extends State<NavigateScreen> {
           ),
 
           MicBar(
-            contextLabel: "Say 'Take Me To…'",
-            contextHint: 'Speak your destination',
+            contextLabel: "Say 'Describe This'",
+            contextHint: 'Or tap to point camera',
             onPress: widget.onMicTap,
             onLongPress: widget.onMicLongPress,
             state: widget.micState,
