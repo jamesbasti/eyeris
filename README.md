@@ -1,6 +1,6 @@
 <div align="center">
 
-# 👁️ Eyeris
+# Eyeris
 
 ### AI-Powered Visual Assistant for the Blind & Low-Vision
 
@@ -14,11 +14,11 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 **Eyeris** is a real-time mobile assistant designed to empower blind and low-vision users. By combining on-device machine learning for speed with cloud-based AI for rich understanding, Eyeris provides natural, spoken descriptions of the user's environment.
 
-### 🎯 Vision
+### Vision
 
 Traditional accessibility tools provide disconnected labels (e.g., "chair", "person"). Eyeris bridges the gap between detection and understanding:
 
@@ -29,20 +29,20 @@ Traditional accessibility tools provide disconnected labels (e.g., "chair", "per
 
 ---
 
-## ✨ Features
+## Features
 
 | Feature | Description | Status |
 |---------|-------------|--------|
-| **🎤 Voice Control** | Control the app with natural voice commands | ✅ Complete |
-| **🎨 Color Detection** | Identify colors with AI-enhanced descriptions | ✅ Complete |
-| **🖼️ Scene Description** | Describe surroundings using Vision AI or TFLite | ✅ Complete |
-| **📖 Text Reading** | OCR and document scanning | 🚧 In Progress |
-| **🆘 Emergency SOS** | Quick access to emergency contacts | ✅ Complete |
-| **🔦 Torch Control** | Voice-activated flashlight | ✅ Complete |
+| **Voice Control** | Control the app with natural voice commands | ✅ Complete |
+| **Color Detection** | Identify colors with AI-enhanced descriptions | ✅ Complete |
+| **Scene Description** | Describe surroundings using Vision AI or TFLite | ✅ Complete |
+| **Text Reading** | OCR and document scanning | 🚧 In Progress |
+| **Emergency SOS** | Quick access to emergency contacts | ✅ Complete |
+| **Torch Control** | Voice-activated flashlight | ✅ Complete |
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Languages
 | Language | Usage |
@@ -128,7 +128,7 @@ eyeris/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -162,7 +162,7 @@ eyeris/
 
 ---
 
-## 🎤 Voice Commands
+## Voice Commands
 
 Eyeris supports natural voice commands:
 
@@ -179,7 +179,7 @@ Eyeris supports natural voice commands:
 
 ---
 
-## 📊 Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -212,13 +212,13 @@ Eyeris supports natural voice commands:
 
 ---
 
-## 📱 Screenshots
+## Screenshots
 
 *Coming soon*
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Voice control with AI intent parsing
 - [x] Color detection with multi-region sampling
@@ -231,13 +231,13 @@ Eyeris supports natural voice commands:
 
 ---
 
-## 📄 Documentation
+## Documentation
 
 - [Function Flows](docs/FUNCTION_FLOWS.md) — Detailed flow diagrams for each feature
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please read our contributing guidelines before submitting PRs.
 
@@ -251,6 +251,6 @@ This project is licensed under the MIT License.
 
 <div align="center">
 
-**Built with ❤️ for accessibility**
+**Built with love for accessibility**
 
 </div>

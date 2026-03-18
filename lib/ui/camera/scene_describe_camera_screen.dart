@@ -279,7 +279,7 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
           description = await _openAIService.analyzeImage(
             imageFile, 
             isTorchOn: _torchOn
-          );
+          ).timeout(const Duration(seconds: 8));
           
           // Clean up the temporary image file
           try {
@@ -287,12 +287,22 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
           } catch (e) {
             debugPrint('Error deleting temp file: $e');
           }
+          
+          // Check if the response indicates an error (network issue, API error, etc.)
+          if (description.contains('Error') || 
+              description.contains('Failed') || 
+              description.contains('API key') ||
+              description.contains('Could not')) {
+            debugPrint('Vision API returned error: $description');
+            description = ''; // Clear to trigger fallback
+          }
         }
       } catch (e) {
         debugPrint('OpenAI Vision failed, falling back to TFLite: $e');
+        description = ''; // Ensure fallback is triggered
       }
 
-      // 2. Fallback to TFLite if Vision API failed
+      // 2. Fallback to TFLite if Vision API failed or returned error
       if (description.isEmpty) {
         if (!mounted) return;
         setState(() => _resultText = 'Using offline detection...');
@@ -308,7 +318,19 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
           return;
         }
 
-        description = await _openAIService.generateAIText(labels, isTorchOn: _torchOn);
+        // Try AI text generation, fall back to local description if offline
+        try {
+          description = await _openAIService.generateAIText(labels, isTorchOn: _torchOn)
+              .timeout(const Duration(seconds: 3));
+          
+          // Check if the response indicates an error (no API key, network issue, etc.)
+          if (description.contains('API key') || description.contains('Failed') || description.contains('Error')) {
+            description = _generateLocalDescription(labels);
+          }
+        } catch (e) {
+          debugPrint('AI text generation failed, using local: $e');
+          description = _generateLocalDescription(labels);
+        }
       }
 
       if (!mounted) return;
@@ -330,6 +352,80 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
         _resultText = 'Error describing the scene. Please try again.';
         _state = _DescribeState.error;
       });
+    }
+  }
+
+  /// Generates a local description from detected labels (offline fallback)
+  String _generateLocalDescription(List<String> labels) {
+    if (labels.isEmpty) return 'Nothing notable detected.';
+    
+    // Categorize objects
+    final people = labels.where((l) => l == 'person').length;
+    final vehicles = labels.where((l) => 
+        ['car', 'bus', 'truck', 'motorcycle', 'bicycle', 'boat', 'airplane', 'train'].contains(l)).toList();
+    final furniture = labels.where((l) => 
+        ['chair', 'couch', 'bed', 'dining table', 'toilet', 'bench'].contains(l)).toList();
+    final electronics = labels.where((l) => 
+        ['tv', 'laptop', 'cell phone', 'keyboard', 'mouse', 'remote'].contains(l)).toList();
+    final kitchen = labels.where((l) => 
+        ['bottle', 'cup', 'bowl', 'fork', 'knife', 'spoon', 'microwave', 'oven', 'sink', 'refrigerator'].contains(l)).toList();
+    final outdoor = labels.where((l) => 
+        ['traffic light', 'stop sign', 'fire hydrant', 'parking meter'].contains(l)).toList();
+    
+    final parts = <String>[];
+    
+    // Build natural description
+    if (people > 0) {
+      parts.add(people == 1 ? 'a person' : '$people people');
+    }
+    
+    if (vehicles.isNotEmpty) {
+      parts.add(vehicles.length == 1 ? 'a ${vehicles.first}' : 'vehicles nearby');
+    }
+    
+    if (outdoor.isNotEmpty) {
+      parts.add('outdoor area with ${outdoor.join(' and ')}');
+    }
+    
+    if (furniture.isNotEmpty) {
+      if (furniture.contains('bed')) {
+        parts.add('what looks like a bedroom');
+      } else if (furniture.contains('couch')) {
+        parts.add('a living area');
+      } else if (furniture.contains('dining table')) {
+        parts.add('a dining area');
+      } else {
+        parts.add(furniture.join(' and '));
+      }
+    }
+    
+    if (kitchen.isNotEmpty) {
+      parts.add('kitchen items');
+    }
+    
+    if (electronics.isNotEmpty) {
+      parts.add(electronics.join(' and '));
+    }
+    
+    // Add remaining objects not categorized
+    final categorized = {...vehicles, ...furniture, ...electronics, ...kitchen, ...outdoor, 'person'};
+    final other = labels.where((l) => !categorized.contains(l)).take(2).toList();
+    if (other.isNotEmpty) {
+      parts.addAll(other);
+    }
+    
+    if (parts.isEmpty) {
+      return 'I can see ${labels.take(3).join(', ')}.';
+    }
+    
+    // Construct sentence
+    if (parts.length == 1) {
+      return 'I can see ${parts.first} in front of you.';
+    } else if (parts.length == 2) {
+      return 'I can see ${parts[0]} and ${parts[1]}.';
+    } else {
+      final last = parts.removeLast();
+      return 'I can see ${parts.join(', ')}, and $last.';
     }
   }
 
@@ -412,19 +508,23 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
         return null;
       }
 
-      final firstPlane = planes[0];
-      final buffer = firstPlane.bytes;
-      final stride = firstPlane.bytesPerRow;
-
-      if (buffer.isEmpty) {
-        debugPrint('Empty buffer');
-        return null;
-      }
-
       const targetSize = 300;
       final inputBuffer = List<int>.filled(targetSize * targetSize * 3, 128);
 
-      _processImageWithEnhancement(buffer, inputBuffer, width, height, stride, targetSize);
+      final format = image.format.group;
+      debugPrint('TFLite: Image format=$format, planes=${planes.length}, size=${width}x$height');
+
+      // Handle different image formats
+      if (format == ImageFormatGroup.yuv420 || format == ImageFormatGroup.nv21 || planes.length >= 3) {
+        // Android YUV420 format
+        _processYuvImage(image, inputBuffer, targetSize);
+      } else if (format == ImageFormatGroup.bgra8888 || planes.length == 1) {
+        // iOS BGRA format
+        _processBgraImage(image, inputBuffer, targetSize);
+      } else {
+        debugPrint('Unknown image format: $format');
+        return null;
+      }
 
       return inputBuffer.reshape([1, targetSize, targetSize, 3]);
     } catch (e) {
@@ -433,50 +533,94 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
     }
   }
 
-  void _processImageWithEnhancement(
-    Uint8List buffer,
-    List<int> inputBuffer,
-    int width,
-    int height,
-    int stride,
-    int targetSize,
-  ) {
-    try {
-      for (int y = 0; y < targetSize && y < height; y += 2) {
-        for (int x = 0; x < targetSize && x < width; x += 2) {
-          final sourceY = (y * height / targetSize).floor();
-          final sourceX = (x * width / targetSize).floor();
-          final index = sourceY * stride + sourceX * 4;
+  /// Process YUV420 image (Android)
+  void _processYuvImage(CameraImage image, List<int> inputBuffer, int targetSize) {
+    final width = image.width;
+    final height = image.height;
+    
+    final yPlane = image.planes[0];
+    final uPlane = image.planes[1];
+    final vPlane = image.planes[2];
+    
+    final yBytes = yPlane.bytes;
+    final uBytes = uPlane.bytes;
+    final vBytes = vPlane.bytes;
+    
+    final yStride = yPlane.bytesPerRow;
+    final uStride = uPlane.bytesPerRow;
+    final vStride = vPlane.bytesPerRow;
+    
+    final uStep = uPlane.bytesPerPixel ?? 1;
+    final vStep = vPlane.bytesPerPixel ?? 1;
 
-          if (index + 3 < buffer.length) {
-            final b = buffer[index];
-            final g = buffer[index + 1];
-            final r = buffer[index + 2];
-            final a = buffer[index + 3];
-
-            if (a == 0) continue;
-
-            final enhancedR = _enhancePixel(r);
-            final enhancedG = _enhancePixel(g);
-            final enhancedB = _enhancePixel(b);
-
-            for (int dy = 0; dy < 2 && y + dy < targetSize; dy++) {
-              for (int dx = 0; dx < 2 && x + dx < targetSize; dx++) {
-                final targetIndex = ((y + dy) * targetSize + (x + dx)) * 3;
-                if (targetIndex + 2 < inputBuffer.length) {
-                  inputBuffer[targetIndex] = enhancedR;
-                  inputBuffer[targetIndex + 1] = enhancedG;
-                  inputBuffer[targetIndex + 2] = enhancedB;
-                }
-              }
-            }
-          }
+    for (int ty = 0; ty < targetSize; ty++) {
+      for (int tx = 0; tx < targetSize; tx++) {
+        // Map target coordinates to source
+        final sourceY = (ty * height / targetSize).floor();
+        final sourceX = (tx * width / targetSize).floor();
+        
+        // Y plane index
+        final yIdx = sourceY * yStride + sourceX;
+        if (yIdx >= yBytes.length) continue;
+        
+        // UV plane indices (2x2 subsampled)
+        final uvX = sourceX ~/ 2;
+        final uvY = sourceY ~/ 2;
+        final uIdx = uvY * uStride + uvX * uStep;
+        final vIdx = uvY * vStride + uvX * vStep;
+        
+        if (uIdx >= uBytes.length || vIdx >= vBytes.length) continue;
+        
+        // YUV to RGB conversion (ITU-R BT.601)
+        final y = yBytes[yIdx] & 0xFF;
+        final u = (uBytes[uIdx] & 0xFF) - 128;
+        final v = (vBytes[vIdx] & 0xFF) - 128;
+        
+        int r = (y + 1.402 * v).round().clamp(0, 255);
+        int g = (y - 0.344136 * u - 0.714136 * v).round().clamp(0, 255);
+        int b = (y + 1.772 * u).round().clamp(0, 255);
+        
+        // Apply enhancement
+        r = _enhancePixel(r);
+        g = _enhancePixel(g);
+        b = _enhancePixel(b);
+        
+        final targetIndex = (ty * targetSize + tx) * 3;
+        if (targetIndex + 2 < inputBuffer.length) {
+          inputBuffer[targetIndex] = r;
+          inputBuffer[targetIndex + 1] = g;
+          inputBuffer[targetIndex + 2] = b;
         }
       }
-    } catch (e) {
-      debugPrint('Error during enhanced processing: $e');
-      for (int i = 0; i < inputBuffer.length; i++) {
-        inputBuffer[i] = 128;
+    }
+  }
+
+  /// Process BGRA image (iOS)
+  void _processBgraImage(CameraImage image, List<int> inputBuffer, int targetSize) {
+    final width = image.width;
+    final height = image.height;
+    final plane = image.planes[0];
+    final buffer = plane.bytes;
+    final stride = plane.bytesPerRow;
+
+    for (int ty = 0; ty < targetSize; ty++) {
+      for (int tx = 0; tx < targetSize; tx++) {
+        final sourceY = (ty * height / targetSize).floor();
+        final sourceX = (tx * width / targetSize).floor();
+        final index = sourceY * stride + sourceX * 4;
+
+        if (index + 3 < buffer.length) {
+          final b = buffer[index];
+          final g = buffer[index + 1];
+          final r = buffer[index + 2];
+
+          final targetIndex = (ty * targetSize + tx) * 3;
+          if (targetIndex + 2 < inputBuffer.length) {
+            inputBuffer[targetIndex] = _enhancePixel(r);
+            inputBuffer[targetIndex + 1] = _enhancePixel(g);
+            inputBuffer[targetIndex + 2] = _enhancePixel(b);
+          }
+        }
       }
     }
   }

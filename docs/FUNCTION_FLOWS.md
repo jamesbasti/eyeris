@@ -120,13 +120,13 @@ User Releases Mic Button
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `lib/services/voice/voice_control_manager.dart` | Orchestrates the entire voice control flow |
-| `lib/services/voice/speech_recognition_service.dart` | Handles microphone input and speech-to-text |
-| `lib/services/voice/intent_router.dart` | Routes to AI or keyword service based on connectivity |
-| `lib/services/voice/ai_intent_service.dart` | OpenAI-powered natural language understanding |
-| `lib/services/voice/keyword_intent_service.dart` | Offline keyword pattern matching |
-| `lib/services/voice/audio_feedback_service.dart` | TTS feedback and sound effects |
-| `lib/models/voice_command.dart` | Data model for parsed commands |
+| [`voice_control_manager.dart`](../lib/services/voice/voice_control_manager.dart) | Orchestrates the entire voice control flow |
+| [`speech_recognition_service.dart`](../lib/services/voice/speech_recognition_service.dart) | Handles microphone input and speech-to-text |
+| [`intent_router.dart`](../lib/services/voice/intent_router.dart) | Routes to AI or keyword service based on connectivity |
+| [`ai_intent_service.dart`](../lib/services/voice/ai_intent_service.dart) | OpenAI-powered natural language understanding |
+| [`keyword_intent_service.dart`](../lib/services/voice/keyword_intent_service.dart) | Offline keyword pattern matching |
+| [`audio_feedback_service.dart`](../lib/services/voice/audio_feedback_service.dart) | TTS feedback and sound effects |
+| [`voice_command.dart`](../lib/models/voice_command.dart) | Data model for parsed commands |
 
 ### Keyword Patterns
 ```dart
@@ -248,9 +248,9 @@ User Opens Color Detect Screen
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `lib/ui/camera/color_detect_camera_screen.dart` | UI and camera handling |
-| `lib/services/color_service.dart` | Color sampling and matching |
-| `lib/services/openai_service.dart` | AI-enhanced color descriptions |
+| [`color_detect_camera_screen.dart`](../lib/ui/camera/color_detect_camera_screen.dart) | UI and camera handling |
+| [`color_service.dart`](../lib/services/color_service.dart) | Color sampling and matching |
+| [`openai_service.dart`](../lib/services/openai_service.dart) | AI-enhanced color descriptions |
 
 ### Color Matching Algorithm
 ```
@@ -377,9 +377,9 @@ User Opens Scene Describe Screen
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `lib/ui/camera/scene_describe_camera_screen.dart` | UI, camera, and TFLite integration |
-| `lib/services/openai_service.dart` | Vision API and text generation |
-| `assets/ml/object_labeler.tflite` | SSD MobileNet model for offline detection |
+| [`scene_describe_camera_screen.dart`](../lib/ui/camera/scene_describe_camera_screen.dart) | UI, camera, and TFLite integration |
+| [`openai_service.dart`](../lib/services/openai_service.dart) | Vision API and text generation |
+| [`object_labeler.tflite`](../assets/ml/object_labeler.tflite) | SSD MobileNet model for offline detection |
 
 ### TFLite Object Detection
 ```
@@ -463,9 +463,9 @@ Text to Speak
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `lib/services/voice_service.dart` | TTS wrapper with profile-based settings |
-| `lib/services/voice/audio_feedback_service.dart` | TTS + sound feedback for voice control |
-| `lib/models/user_preferences.dart` | Stores voice speed preference |
+| [`voice_service.dart`](../lib/services/voice_service.dart) | TTS wrapper with profile-based settings |
+| [`audio_feedback_service.dart`](../lib/services/voice/audio_feedback_service.dart) | TTS + sound feedback for voice control |
+| [`user_preferences.dart`](../lib/models/user_preferences.dart) | Stores voice speed preference |
 
 ---
 
