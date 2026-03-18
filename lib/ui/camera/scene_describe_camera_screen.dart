@@ -12,6 +12,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:eyeris/core/app_theme.dart';
 import 'package:eyeris/services/openai_service.dart';
+import 'package:eyeris/services/voice/voice_control_manager.dart';
+import 'package:eyeris/models/voice_command.dart';
 
 // ─────────────────────────────────────────────
 // SCENE DESCRIBE CAMERA SCREEN
@@ -53,6 +55,7 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
 
   final OpenAIService _openAIService = OpenAIService();
   final FlutterTts _flutterTts = FlutterTts();
+  final VoiceControlManager _voiceControl = VoiceControlManager.instance;
 
   @override
   void initState() {
@@ -60,6 +63,65 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
     _loadModel();
     _initTts();
     _initCamera();
+    _initVoiceControl();
+  }
+
+  Future<void> _initVoiceControl() async {
+    await _voiceControl.initialize();
+
+    // Handle voice commands
+    _voiceControl.onAction = (action) async {
+      if (!mounted) return;
+      
+      switch (action) {
+        case ActionTarget.describeScene:
+          await _runSceneNarration();
+          break;
+        case ActionTarget.detectColor:
+          // Navigate to color detect
+          widget.onBack();
+          break;
+        case ActionTarget.readText:
+          // Navigate to read screen
+          widget.onBack();
+          break;
+      }
+    };
+
+    _voiceControl.onSetting = (setting, parameters) async {
+      if (!mounted) return;
+      
+      switch (setting) {
+        case SettingTarget.torch:
+          final state = parameters['state'] as String?;
+          if (state == 'on' && !_torchOn) {
+            await _toggleTorch();
+          } else if (state == 'off' && _torchOn) {
+            await _toggleTorch();
+          }
+          break;
+        case SettingTarget.speechRate:
+          // Speech rate is handled globally by voice control
+          break;
+      }
+    };
+
+    _voiceControl.onNavigate = (target) async {
+      if (!mounted) return;
+      
+      switch (target) {
+        case NavigationTarget.back:
+          widget.onBack();
+          break;
+        case NavigationTarget.home:
+          widget.onBack();
+          break;
+        default:
+          // Navigate to other screens
+          widget.onBack();
+          break;
+      }
+    };
   }
 
   Future<void> _loadModel() async {
@@ -589,6 +651,7 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
     _cameraController?.dispose();
     _interpreter?.close();
     _flutterTts.stop();
+    _voiceControl.dispose();
     super.dispose();
   }
 

@@ -1,6 +1,10 @@
 // lib/services/voice/intent_router.dart
 //
 // Hybrid intent router that uses AI when online, keywords when offline.
+// Prioritizes low-latency responses by returning confident keyword matches
+// immediately and enforcing timeouts on slower AI requests.
+//
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -17,14 +21,30 @@ class IntentRouter {
   final KeywordIntentService _keywordService = KeywordIntentService.instance;
   final Connectivity _connectivity = Connectivity();
 
+  static const double _keywordConfidenceThreshold = 0.65;
+  static const Duration _aiTimeout = Duration(milliseconds: 2000);
+  static const Duration _connectivityCacheDuration = Duration(seconds: 10);
+
   bool _lastOfflineAnnounced = false;
+  bool _lastConnectivityStatus = true;
+  DateTime? _lastConnectivityCheck;
 
   /// Callback when switching to offline mode (for TTS announcement)
   void Function()? onOfflineModeActivated;
 
   /// Parse speech text into a VoiceCommand using the appropriate service
   Future<VoiceCommand> parseIntent(String text) async {
-    // Check network connectivity
+    // Parse keywords immediately for instant responses
+    final keywordCommand = _keywordService.parseIntent(text);
+    if (keywordCommand.isValid &&
+        keywordCommand.confidence >= _keywordConfidenceThreshold) {
+      debugPrint('IntentRouter: keyword match accepted '
+          '(confidence ${keywordCommand.confidence.toStringAsFixed(2)})');
+      _lastOfflineAnnounced = false;
+      return keywordCommand;
+    }
+
+    // Check network connectivity (cached)
     final isOnline = await _checkConnectivity();
 
     if (isOnline && _aiService.isConfigured) {
@@ -32,15 +52,25 @@ class IntentRouter {
       debugPrint('IntentRouter: using AI (online)');
       _lastOfflineAnnounced = false;
       
-      final command = await _aiService.parseIntent(text);
-      
-      // If AI returns unknown, try keyword fallback
-      if (!command.isValid) {
-        debugPrint('IntentRouter: AI returned unknown, trying keywords');
-        return _keywordService.parseIntent(text);
+      try {
+        final command = await _aiService
+            .parseIntent(text)
+            .timeout(_aiTimeout, onTimeout: () {
+          debugPrint('IntentRouter: AI timeout, falling back to keywords');
+          return VoiceCommand.unknown(text);
+        });
+
+        // If AI returns unknown, try keyword fallback result
+        if (!command.isValid) {
+          debugPrint('IntentRouter: AI returned unknown, using keyword fallback');
+          return keywordCommand;
+        }
+
+        return command;
+      } on TimeoutException {
+        debugPrint('IntentRouter: AI timed out (exception), using keyword fallback');
+        return keywordCommand;
       }
-      
-      return command;
     } else {
       // Offline: use keyword matching
       debugPrint('IntentRouter: using keywords (offline)');
@@ -51,23 +81,34 @@ class IntentRouter {
         onOfflineModeActivated?.call();
       }
       
-      return _keywordService.parseIntent(text);
+      return keywordCommand;
     }
   }
 
-  Future<bool> _checkConnectivity() async {
+  Future<bool> _checkConnectivity({bool force = false}) async {
+    final now = DateTime.now();
+    if (!force &&
+        _lastConnectivityCheck != null &&
+        now.difference(_lastConnectivityCheck!) < _connectivityCacheDuration) {
+      return _lastConnectivityStatus;
+    }
+
     try {
       final result = await _connectivity.checkConnectivity();
-      // Check if we have any connectivity (not none)
-      return result.any((r) => r != ConnectivityResult.none);
+      final hasConnection = result.any((r) => r != ConnectivityResult.none);
+      _lastConnectivityStatus = hasConnection;
+      _lastConnectivityCheck = now;
+      return hasConnection;
     } catch (e) {
       debugPrint('IntentRouter: connectivity check error — $e');
+      _lastConnectivityStatus = false;
+      _lastConnectivityCheck = now;
       return false;
     }
   }
 
   /// Check current connectivity status
-  Future<bool> get isOnline => _checkConnectivity();
+  Future<bool> get isOnline => _checkConnectivity(force: true);
 
   /// Stream of connectivity changes
   Stream<bool> get connectivityStream {

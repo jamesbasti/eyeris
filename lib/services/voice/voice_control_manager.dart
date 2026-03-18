@@ -199,13 +199,10 @@ class VoiceControlManager {
   Future<void> _executeCommand(VoiceCommand command) async {
     _setState(VoiceControlState.executing);
 
-    // Play success feedback and speak confirmation
-    await _audio.playFeedback(FeedbackType.success);
-    if (command.response.isNotEmpty) {
-      await _audio.speak(command.response);
-    }
+    // Play success feedback (don't await - run in background)
+    _audio.playFeedback(FeedbackType.success);
 
-    // Notify listeners
+    // Notify listeners immediately for fast response
     onCommandRecognized?.call(command);
 
     // Execute based on intent type
@@ -244,6 +241,11 @@ class VoiceControlManager {
       case VoiceIntent.unknown:
         // Already handled above
         break;
+    }
+
+    // Speak confirmation after action is triggered (non-blocking)
+    if (command.response.isNotEmpty) {
+      _audio.speak(command.response);
     }
 
     _setState(VoiceControlState.idle);

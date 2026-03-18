@@ -31,13 +31,26 @@ Available targets:
 - Actions: detectColor, readText, describeScene
 - Settings: torch (parameters: {"state": "on" or "off"}), speechRate (parameters: {"direction": "increase" or "decrease"})
 
+Enhanced understanding guidelines:
+1. Handle natural language variations and conversational speech
+2. Recognize context clues (e.g., "it's dark" → torch on)
+3. Understand indirect requests (e.g., "I need to see this" → scene describe)
+4. Filter out filler words and politeness expressions
+5. Handle partial words and mispronunciations
+6. Consider the user's likely intent based on accessibility needs
+
 Examples:
 - "scan this document" → {"intent": "navigation", "target": "read", "parameters": {}, "confidence": 0.95, "response": "Opening Read screen"}
 - "what color is this" → {"intent": "navigation", "target": "colorDetect", "parameters": {}, "confidence": 0.95, "response": "Opening Color Detect"}
 - "it's too dark" → {"intent": "setting", "target": "torch", "parameters": {"state": "on"}, "confidence": 0.85, "response": "Turning torch on"}
 - "what am I looking at" → {"intent": "navigation", "target": "sceneDescribe", "parameters": {}, "confidence": 0.9, "response": "Opening Scene Describe"}
+- "can you help me see what's around" → {"intent": "navigation", "target": "sceneDescribe", "parameters": {}, "confidence": 0.9, "response": "Opening Scene Describe"}
+- "I need to read this text" → {"intent": "navigation", "target": "read", "parameters": {}, "confidence": 0.95, "response": "Opening Read screen"}
+- "please tell me the color" → {"intent": "navigation", "target": "colorDetect", "parameters": {}, "confidence": 0.9, "response": "Opening Color Detect"}
 - "go back" → {"intent": "navigation", "target": "back", "parameters": {}, "confidence": 1.0, "response": "Going back"}
 - "speak slower" → {"intent": "setting", "target": "speechRate", "parameters": {"direction": "decrease"}, "confidence": 0.95, "response": "Speaking slower"}
+- "can you turn on the light" → {"intent": "setting", "target": "torch", "parameters": {"state": "on"}, "confidence": 0.85, "response": "Turning torch on"}
+- "I need help" → {"intent": "navigation", "target": "communicate", "parameters": {}, "confidence": 0.9, "response": "Opening Communicate"}
 
 If the command is unclear or unrelated to app functions, return:
 {"intent": "unknown", "target": "", "parameters": {}, "confidence": 0.0, "response": "I didn't understand that command."}
@@ -64,7 +77,7 @@ If the command is unclear or unrelated to app functions, return:
           'Authorization': 'Bearer $apiKey',
         },
         body: jsonEncode({
-          'model': 'gpt-4.1-mini',
+          'model': 'gpt-4o-mini',
           'messages': [
             {'role': 'system', 'content': _systemPrompt},
             {'role': 'user', 'content': 'User command: "$text"'},
@@ -72,7 +85,7 @@ If the command is unclear or unrelated to app functions, return:
           'max_tokens': 150,
           'temperature': 0.3,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(milliseconds: 2500));
 
       if (response.statusCode != 200) {
         debugPrint('AIIntent: API error ${response.statusCode}');

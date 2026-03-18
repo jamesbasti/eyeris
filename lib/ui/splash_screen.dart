@@ -27,6 +27,10 @@ class _SplashScreenState extends State<SplashScreen> {
     // Initialize user preferences service
     await UserPreferencesService.instance.initialize();
 
+    // TEMPORARY: Reset onboarding to show it again (remove after testing)
+    await UserPreferencesService.instance.clearPreferences();
+    debugPrint('SplashScreen: onboarding preferences cleared for testing');
+
     // Wait minimum 2 seconds for splash screen
     await Future.delayed(const Duration(seconds: 2));
 
@@ -35,10 +39,14 @@ class _SplashScreenState extends State<SplashScreen> {
     // Check if onboarding is completed
     final isOnboardingCompleted = UserPreferencesService.instance.isOnboardingCompleted;
 
+    debugPrint('SplashScreen: onboarding completed = $isOnboardingCompleted');
+
     // Navigate to appropriate screen
     if (isOnboardingCompleted) {
+      debugPrint('SplashScreen: navigating to home');
       Navigator.pushReplacementNamed(context, EyerisRoutes.home);
     } else {
+      debugPrint('SplashScreen: navigating to onboarding');
       Navigator.pushReplacementNamed(context, EyerisRoutes.onboarding);
     }
   }
