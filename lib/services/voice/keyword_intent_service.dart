@@ -16,7 +16,7 @@ class KeywordIntentService {
   
   static const Map<String, List<String>> _navigationPatterns = {
     'read': ['read', 'scan', 'document', 'text', 'ocr', 'scan this', 'read this', 'what does this say', 'scan document', 'read text', 'ocr scan'],
-    'colorDetect': ['color', 'colour', 'what color', 'identify color', 'color detect', 'check color', 'detect color', 'what colour', 'colour detection'],
+    'colorDetect': ['what color is this', 'what colour is this', 'what color', 'what colour', 'identify color', 'color detect', 'check color', 'detect color', 'colour detection', 'color', 'colour'],
     'sceneDescribe': ['describe', 'scene', 'what is this', 'looking at', 'what do you see', 'what is in front', 'describe scene', 'what am i looking at', 'describe this', 'what\'s around me', 'what\'s in front of me'],
     'communicate': ['call', 'message', 'communicate', 'contact', 'phone', 'send message', 'make call', 'emergency', 'help', 'sos'],
     'back': ['back', 'go back', 'previous', 'return', 'go back to previous', 'return to previous'],
@@ -159,45 +159,77 @@ class KeywordIntentService {
   }
 
   VoiceCommand? _matchNavigation(String normalized, String original) {
+    // Collect all matches and pick the best one (longest keyword = most specific)
+    final matches = <Map<String, dynamic>>[];
+    
     for (final entry in _navigationPatterns.entries) {
       final target = entry.key;
       final keywords = entry.value;
       
       for (final keyword in keywords) {
         if (normalized.contains(keyword)) {
-          final response = _getNavigationResponse(target);
-          return VoiceCommand(
-            intent: VoiceIntent.navigation,
-            target: target,
-            confidence: _calculateConfidence(normalized, keyword),
-            response: response,
-            originalText: original,
-          );
+          matches.add({
+            'target': target,
+            'keyword': keyword,
+            'length': keyword.length,
+          });
         }
       }
     }
-    return null;
+    
+    if (matches.isEmpty) return null;
+    
+    // Sort by keyword length descending (longer = more specific)
+    matches.sort((a, b) => (b['length'] as int).compareTo(a['length'] as int));
+    
+    final best = matches.first;
+    final target = best['target'] as String;
+    final keyword = best['keyword'] as String;
+    
+    return VoiceCommand(
+      intent: VoiceIntent.navigation,
+      target: target,
+      confidence: _calculateConfidence(normalized, keyword),
+      response: _getNavigationResponse(target),
+      originalText: original,
+    );
   }
 
   VoiceCommand? _matchAction(String normalized, String original) {
+    // Collect all matches and pick the best one (longest keyword = most specific)
+    final matches = <Map<String, dynamic>>[];
+    
     for (final entry in _actionPatterns.entries) {
       final target = entry.key;
       final keywords = entry.value;
       
       for (final keyword in keywords) {
         if (normalized.contains(keyword)) {
-          final response = _getActionResponse(target);
-          return VoiceCommand(
-            intent: VoiceIntent.action,
-            target: target,
-            confidence: _calculateConfidence(normalized, keyword),
-            response: response,
-            originalText: original,
-          );
+          matches.add({
+            'target': target,
+            'keyword': keyword,
+            'length': keyword.length,
+          });
         }
       }
     }
-    return null;
+    
+    if (matches.isEmpty) return null;
+    
+    // Sort by keyword length descending (longer = more specific)
+    matches.sort((a, b) => (b['length'] as int).compareTo(a['length'] as int));
+    
+    final best = matches.first;
+    final target = best['target'] as String;
+    final keyword = best['keyword'] as String;
+    
+    return VoiceCommand(
+      intent: VoiceIntent.action,
+      target: target,
+      confidence: _calculateConfidence(normalized, keyword),
+      response: _getActionResponse(target),
+      originalText: original,
+    );
   }
 
   VoiceCommand? _matchSetting(String normalized, String original) {
