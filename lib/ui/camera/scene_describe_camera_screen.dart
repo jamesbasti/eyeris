@@ -1,6 +1,8 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:io';
+import 'dart:math' as math;
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -14,10 +16,9 @@ import 'package:eyeris/services/openai_service.dart';
 // ─────────────────────────────────────────────
 // SCENE DESCRIBE CAMERA SCREEN
 //
-// On-demand TFLite object detection triggered when
-// user taps Describe — no live stream overhead.
-// Captures a single frame, runs inference, then passes
-// labels to OpenAI for a spoken scene description.
+// Hybrid approach: Tries OpenAI Vision API first, falls back to
+// TFLite object detection when offline. Captures image and sends
+// to AI for rich scene analysis, with local ML as backup.
 // ─────────────────────────────────────────────
 
 enum _DescribeState { idle, describing, speaking, error }
@@ -44,7 +45,7 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
   String _resultText = 'Point your camera and tap DESCRIBE.';
   String _errorText = '';
 
-  /// TFLite interpreter for object detection
+  /// TFLite interpreter for object detection (fallback)
   tfl.Interpreter? _interpreter;
 
   /// COCO dataset labels (90 classes)
@@ -184,6 +185,115 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
           _errorText = 'Could not access camera: $e';
         });
       }
+    }
+  }
+
+  
+  Future<void> _runSceneNarration() async {
+    if (_state == _DescribeState.describing) return;
+
+    HapticFeedback.mediumImpact();
+
+    // Stop any ongoing speech
+    await _flutterTts.stop();
+
+    if (!mounted) return;
+    setState(() {
+      _state = _DescribeState.describing;
+      _resultText = 'Analyzing the scene...';
+    });
+
+    try {
+      String description = '';
+      
+      // 1. Try OpenAI Vision API first (internet required)
+      try {
+        final imageFile = await _captureImage();
+        
+        if (imageFile != null) {
+          if (!mounted) return;
+          setState(() => _resultText = 'Analyzing with AI...');
+          
+          description = await _openAIService.analyzeImage(
+            imageFile, 
+            isTorchOn: _torchOn
+          );
+          
+          // Clean up the temporary image file
+          try {
+            await imageFile.delete();
+          } catch (e) {
+            debugPrint('Error deleting temp file: $e');
+          }
+        }
+      } catch (e) {
+        debugPrint('OpenAI Vision failed, falling back to TFLite: $e');
+      }
+
+      // 2. Fallback to TFLite if Vision API failed
+      if (description.isEmpty) {
+        if (!mounted) return;
+        setState(() => _resultText = 'Using offline detection...');
+        
+        final labels = await _detectOnce();
+        
+        if (!mounted) return;
+        if (labels.isEmpty) {
+          setState(() {
+            _resultText = 'Nothing notable in front of you right now.';
+            _state = _DescribeState.idle;
+          });
+          return;
+        }
+
+        description = await _openAIService.generateAIText(labels, isTorchOn: _torchOn);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _resultText = description.isNotEmpty
+            ? description
+            : 'Could not describe the scene. Please try again.';
+        _state = _DescribeState.speaking;
+      });
+
+      // Speak the generated description aloud
+      if (description.isNotEmpty) {
+        await _flutterTts.speak(description);
+      }
+    } catch (e) {
+      debugPrint('Scene narration error: $e');
+      if (!mounted) return;
+      setState(() {
+        _resultText = 'Error describing the scene. Please try again.';
+        _state = _DescribeState.error;
+      });
+    }
+  }
+
+  /// Captures an image from the camera and saves it to a temporary file
+  Future<File?> _captureImage() async {
+    if (_cameraController == null || !_cameraReady) return null;
+
+    try {
+      final XFile capturedImage = await _cameraController!.takePicture();
+
+      // Get temporary directory
+      final Directory tempDir = await getTemporaryDirectory();
+      final String tempPath = tempDir.path;
+      
+      // Create a unique filename
+      final String fileName = 'scene_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String filePath = path.join(tempPath, fileName);
+      
+      // Copy the captured image to temp directory
+      final File tempFile = File(capturedImage.path);
+      final File savedFile = await tempFile.copy(filePath);
+      
+      return savedFile;
+    } catch (e) {
+      debugPrint('Error capturing image: $e');
+      return null;
     }
   }
 
@@ -348,6 +458,7 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
 
       sortedDetections.sort((a, b) => b['score'].compareTo(a['score']));
 
+      // Enhanced filtering with spatial analysis
       final foregroundDetections = sortedDetections.where((detection) {
         final score = detection['score'] as double;
         final box = detection['box'] as List<double>;
@@ -356,13 +467,32 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
         final height = box[3] - box[1];
         final area = width * height;
 
-        final isLargeEnough = area > 0.005;
-        final isHighConfidence = score > 0.2;
+        // Adaptive thresholds based on object size
+        final isLargeEnough = area > 0.003; // Slightly smaller threshold
+        final isHighConfidence = score > 0.15; // Lower confidence threshold
+        
+        // Add spatial context
+        final centerX = (box[0] + box[2]) / 2;
+        final centerY = (box[1] + box[3]) / 2;
+        
+        detection['centerX'] = centerX;
+        detection['centerY'] = centerY;
+        detection['area'] = area;
+        
+        // Determine position
+        if (centerX < 0.33) {
+          detection['position'] = 'left';
+        } else if (centerX > 0.67) {
+          detection['position'] = 'right';
+        } else {
+          detection['position'] = 'center';
+        }
 
         return isLargeEnough && isHighConfidence;
       }).toList();
 
-      final topDetections = foregroundDetections.take(5).toList();
+      // Group related objects and prioritize important ones
+      final topDetections = _prioritizeDetections(foregroundDetections);
 
       for (final detection in topDetections) {
         final className = detection['className'] as String;
@@ -371,7 +501,8 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
         }
       }
 
-      debugPrint('Final detected objects: $detected');
+      debugPrint('SceneDescribe: detected — $detected');
+      return detected;
     } catch (e) {
       debugPrint('Error parsing output: $e');
     }
@@ -379,58 +510,58 @@ class _SceneDescribeCameraScreenState extends State<SceneDescribeCameraScreen> {
     return detected;
   }
 
-  Future<void> _runSceneNarration() async {
-    if (_state == _DescribeState.describing) return;
+  /// Prioritizes detections based on importance, size, and confidence
+  List<Map<String, dynamic>> _prioritizeDetections(List<Map<String, dynamic>> detections) {
+    // Define importance weights for different object categories
+    const Map<String, double> importanceWeights = {
+      'person': 2.0,
+      'car': 1.8,
+      'bus': 1.7,
+      'truck': 1.6,
+      'motorcycle': 1.5,
+      'bicycle': 1.4,
+      'traffic light': 1.3,
+      'stop sign': 1.3,
+      'fire hydrant': 1.2,
+      'bench': 1.1,
+      'chair': 1.1,
+      'couch': 1.1,
+      'dining table': 1.1,
+      'bed': 1.0,
+      'toilet': 1.0,
+      'tv': 0.9,
+      'laptop': 0.9,
+      'mouse': 0.8,
+      'remote': 0.8,
+      'keyboard': 0.8,
+      'cell phone': 0.8,
+      'book': 0.7,
+      'clock': 0.7,
+      'vase': 0.6,
+      'scissors': 0.5,
+      'teddy bear': 0.4,
+      'hair drier': 0.3,
+      'toothbrush': 0.3,
+    };
 
-    HapticFeedback.mediumImpact();
+    // Calculate priority score for each detection
+    final prioritized = detections.map((detection) {
+      final className = detection['className'] as String;
+      final score = detection['score'] as double;
+      final area = detection['area'] as double;
+      final importance = importanceWeights[className] ?? 0.5;
+      
+      // Priority = confidence * importance * size_factor
+      final sizeFactor = math.min(area * 100, 2.0); // Cap size factor at 2.0
+      final priorityScore = score * importance * sizeFactor;
+      
+      detection['priorityScore'] = priorityScore;
+      return detection;
+    }).toList();
 
-    // Stop any ongoing speech
-    await _flutterTts.stop();
-
-    if (!mounted) return;
-    setState(() {
-      _state = _DescribeState.describing;
-      _resultText = 'Scanning the scene...';
-    });
-
-    try {
-      // 1. Capture one frame and run TFLite on-demand
-      final labels = await _detectOnce();
-
-      if (!mounted) return;
-      if (labels.isEmpty) {
-        setState(() {
-          _resultText = 'Nothing notable in front of you right now.';
-          _state = _DescribeState.idle;
-        });
-        return;
-      }
-
-      setState(() => _resultText = 'Describing the scene...');
-
-      final description =
-          await _openAIService.generateAIText(labels);
-
-      if (!mounted) return;
-      setState(() {
-        _resultText = description.isNotEmpty
-            ? description
-            : 'Could not describe the scene. Please try again.';
-        _state = _DescribeState.speaking;
-      });
-
-      // Speak the generated description aloud
-      if (description.isNotEmpty) {
-        await _flutterTts.speak(description);
-      }
-    } catch (e) {
-      debugPrint('Scene narration error: $e');
-      if (!mounted) return;
-      setState(() {
-        _resultText = 'Error describing the scene. Please try again.';
-        _state = _DescribeState.error;
-      });
-    }
+    // Sort by priority score and take top 5
+    prioritized.sort((a, b) => b['priorityScore'].compareTo(a['priorityScore']));
+    return prioritized.take(5).toList();
   }
 
   Future<void> _stopSpeaking() async {

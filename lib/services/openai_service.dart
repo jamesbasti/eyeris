@@ -1,38 +1,51 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  /// Generates a short, spoken-style description of the scene
-  /// using a Prompt A–style template.
-  Future<String> generateAIText(List<String> labels) async {
+  /// Generates an enhanced AI description of the scene with context awareness
+  Future<String> generateAIText(List<String> labels, {bool isTorchOn = false}) async {
     final apiKey = dotenv.env['OPENAI_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
       return 'API key not found. Please set OPENAI_API_KEY in your .env file.';
     }
 
-    // Build the Prompt A–style instruction with the detected labels.
+    // Build enhanced prompt with context
     final detectedList =
         labels.isEmpty ? 'none' : labels.toSet().join(', '); // de-duplicate
+    
+    final currentTime = DateTime.now();
+    final hour = currentTime.hour;
+    final timeContext = hour >= 6 && hour < 18 ? 'daytime' : 
+                       hour >= 18 && hour < 22 ? 'evening' : 'night';
+    final lightingContext = isTorchOn ? 'with flashlight on' : 'in ambient lighting';
 
     final prompt = '''
-You are an AI visual assistant for blind and low-vision users. Your tone is calm, clear, friendly, concise, and helpful.
-You will receive a list of detected objects from the camera right now.
+You are an AI visual assistant for blind and low-vision users. Your tone is calm, clear, friendly, and helpful.
 
+Current context: $timeContext, $lightingContext
 Detected objects: $detectedList
 
-Rules:
-- Describe the scene naturally, as if speaking to the user.
-- Focus on what is most important/relevant for navigation and understanding the environment.
-- Mention approximate positions only if confident (e.g., "in front of you", "to your left").
-- Do not guess distances or make up things not in the list.
-- Keep the response short (1–2 sentences), easy to understand when spoken.
-- If nothing important is detected, say something reassuring like "Nothing notable in front of you right now."
-- Never mention technical terms like "ML Kit" or "object detection".
-- Do NOT ask the user to request more details, more help, or navigation help.
-- Never use phrases like "let me know if you need more details" or "let me know if you want help".
+Enhanced Guidelines:
+1. Create a vivid but concise mental picture (1-2 sentences)
+2. Infer the most likely scene type (indoor/outdoor, room type, street, etc.)
+3. Describe spatial relationships and layout when evident
+4. Mention important objects for navigation/safety
+5. Note potential obstacles or points of interest
+6. Consider the time of day in your description
+7. If torch is on, assume low light conditions
+8. Group related objects naturally (e.g., "kitchen counter with appliances")
+9. Use directional language sparingly and only when confident
+10. If nothing significant is detected, provide a reassuring context
+11. Never use phrases like "feel free to ask", "let me know", or offer additional help
 
-Generate a spoken description right now.
+Examples:
+- "You're in what appears to be a kitchen with a counter and appliances to your right"
+- "A street scene with buildings and what looks like a sidewalk in front of you"
+- "An indoor space with a table and chairs, possibly a dining area"
+
+Generate a helpful, natural description right now.
 ''';
 
     const url = 'https://api.openai.com/v1/chat/completions';
@@ -281,6 +294,136 @@ Generate a natural, spoken description that:
       // Mixed colors
       final others = secondaryColors.map((c) => c.$1).join(', ');
       return '$dominantColor and $others';
+    }
+  }
+
+  /// Analyzes an image using OpenAI Vision API for rich scene description
+  Future<String> analyzeImage(File imageFile, {bool isTorchOn = false}) async {
+    final apiKey = dotenv.env['OPENAI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      return 'API key not found. Please set OPENAI_API_KEY in your .env file.';
+    }
+
+    try {
+      // Read image file and convert to base64
+      final imageBytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(imageBytes);
+      
+      // Get image format
+      final extension = imageFile.path.split('.').last.toLowerCase();
+      final mimeType = extension == 'jpg' || extension == 'jpeg' 
+          ? 'image/jpeg' 
+          : extension == 'png' 
+              ? 'image/png' 
+              : 'image/jpeg'; // default to jpeg
+
+      final currentTime = DateTime.now();
+      final hour = currentTime.hour;
+      final timeContext = hour >= 6 && hour < 18 ? 'daytime' : 
+                         hour >= 18 && hour < 22 ? 'evening' : 'night';
+      final lightingContext = isTorchOn ? 'with flashlight on' : 'in ambient lighting';
+
+      final prompt = '''
+You are an AI visual assistant for blind and low-vision users. Your tone is calm, clear, friendly, and helpful.
+
+Current context: $timeContext, $lightingContext
+
+Analyze this image and provide a vivid, concise description of what the user is seeing right now.
+
+Enhanced Guidelines:
+1. Create a vivid but concise mental picture (1-2 sentences)
+2. Infer the most likely scene type (indoor/outdoor, room type, street, etc.)
+3. Describe spatial relationships and layout when evident
+4. Mention important objects for navigation/safety
+5. Note potential obstacles or points of interest
+6. Consider the time of day in your description
+7. If torch is on, assume low light conditions
+8. Group related objects naturally (e.g., "kitchen counter with appliances")
+9. Use directional language sparingly and only when confident
+10. If nothing significant is detected, provide a reassuring context
+11. Never use phrases like "feel free to ask", "let me know", or offer additional help
+
+Examples:
+- "You're in what appears to be a kitchen with a counter and appliances to your right"
+- "A street scene with buildings and what looks like a sidewalk in front of you"
+- "An indoor space with a table and chairs, possibly a dining area"
+
+Generate a helpful, natural description right now.
+''';
+
+      const url = 'https://api.openai.com/v1/chat/completions';
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      };
+      
+      final body = jsonEncode(<String, Object>{
+        'model': 'gpt-4o', // Using GPT-4o for vision capabilities
+        'messages': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'role': 'system',
+            'content': 'You are an AI visual assistant for blind and low-vision users. Speak clearly, calmly, and concisely.',
+          },
+          <String, dynamic>{
+            'role': 'user',
+            'content': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'type': 'text',
+                'text': prompt,
+              },
+              <String, dynamic>{
+                'type': 'image_url',
+                'image_url': <String, String>{
+                  'url': 'data:$mimeType;base64,$base64Image',
+                },
+              },
+            ],
+          },
+        ],
+        'max_tokens': 150,
+        'temperature': 0.7,
+      });
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: body,
+      );
+
+      // Debug output
+      // ignore: avoid_print
+      print('OpenAI Vision status: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final choices = data['choices'] as List<dynamic>?;
+        if (choices == null || choices.isEmpty) {
+          return 'No description generated.';
+        }
+        final message = (choices.first as Map<String, dynamic>)['message']
+            as Map<String, dynamic>?;
+        final content = message?['content'] as String?;
+        if (content == null || content.trim().isEmpty) {
+          return 'No description generated.';
+        }
+        return content.trim();
+      }
+
+      // Try to surface a human-friendly explanation from the error response.
+      try {
+        final errorJson = jsonDecode(response.body) as Map<String, dynamic>;
+        final error = errorJson['error'] as Map<String, dynamic>?;
+        final message = error?['message']?.toString();
+        if (message != null && message.isNotEmpty) {
+          return 'Failed to analyze image (${response.statusCode}): $message';
+        }
+      } catch (_) {
+        // If parsing fails, just fall back to generic text.
+      }
+
+      return 'Failed to analyze image (${response.statusCode}).';
+    } catch (e) {
+      return 'Error analyzing image: $e';
     }
   }
 }
