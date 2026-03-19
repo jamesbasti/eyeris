@@ -30,6 +30,8 @@ class VoiceControlManager {
   VoiceControlState _state = VoiceControlState.idle;
   String _lastTranscript = '';
   VoiceCommand? _lastCommand;
+  bool _isInitialized = false;
+  bool _speechAvailable = false;
 
   // ── Callbacks ──────────────────────────────────────────────────────
   
@@ -61,6 +63,8 @@ class VoiceControlManager {
   // ── Initialization ─────────────────────────────────────────────────
 
   Future<bool> initialize() async {
+    if (_isInitialized) return _speechAvailable;
+
     await _audio.initialize();
 
     // Set up offline mode announcement
@@ -78,20 +82,30 @@ class VoiceControlManager {
       }
     };
 
-    // Initialize speech recognition (this will request microphone permission immediately)
-    final initialized = await _speech.initialize();
-    if (!initialized) {
-      debugPrint('VoiceControl: speech recognition not available');
-    } else {
-      debugPrint('VoiceControl: speech recognition ready');
-    }
-    return initialized;
+    // Mark as initialized (audio + callbacks ready)
+    _isInitialized = true;
+
+    // DISABLED: speech_to_text native init still crashes on iOS 26 even with Flutter 3.41.4
+    // The crash occurs in iOS speech recognition framework during background thread init
+    debugPrint('VoiceControl: initialized (speech recognition disabled for iOS 26)');
+    _speechAvailable = false;
+    return false;
   }
 
   // ── Control Methods ────────────────────────────────────────────────
 
   /// Start listening for voice commands (call on press)
   Future<void> startListening() async {
+    if (!_isInitialized) {
+      debugPrint('VoiceControl: not initialized, ignoring startListening');
+      return;
+    }
+    if (!_speechAvailable) {
+      // Speech disabled on iOS 26 — give one-time TTS feedback
+      debugPrint('VoiceControl: speech not available on this device');
+      await _audio.speak('Voice commands temporarily unavailable.');
+      return;
+    }
     if (_state != VoiceControlState.idle) {
       debugPrint('VoiceControl: cannot start, state is $_state');
       return;

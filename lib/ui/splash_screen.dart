@@ -27,10 +27,6 @@ class _SplashScreenState extends State<SplashScreen> {
     // Initialize user preferences service
     await UserPreferencesService.instance.initialize();
 
-    // TEMPORARY: Reset onboarding to show it again (remove after testing)
-    await UserPreferencesService.instance.clearPreferences();
-    debugPrint('SplashScreen: onboarding preferences cleared for testing');
-
     // Wait minimum 2 seconds for splash screen
     await Future.delayed(const Duration(seconds: 2));
 
