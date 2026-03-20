@@ -4,9 +4,12 @@
 // intent parsing, and command execution.
 
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:eyeris/models/voice_command.dart';
-import 'package:eyeris/services/voice/speech_recognition_service.dart';
+import 'package:eyeris/services/voice/speech_interface.dart';
+import 'package:eyeris/services/voice/android_speech.dart';
+import 'package:eyeris/services/voice/ios_speech.dart';
 import 'package:eyeris/services/voice/intent_router.dart';
 import 'package:eyeris/services/voice/audio_feedback_service.dart';
 
@@ -20,10 +23,17 @@ enum VoiceControlState {
 
 /// Voice control manager - coordinates the entire voice control flow
 class VoiceControlManager {
-  VoiceControlManager._();
+  VoiceControlManager._() {
+    // Initialize platform-specific speech recognition
+    if (Platform.isIOS) {
+      _speech = IOSSpeechRecognition();
+    } else {
+      _speech = AndroidSpeechRecognition();
+    }
+  }
   static final VoiceControlManager instance = VoiceControlManager._();
 
-  final SpeechRecognitionService _speech = SpeechRecognitionService.instance;
+  late ISpeechRecognition _speech;
   final IntentRouter _intentRouter = IntentRouter.instance;
   final AudioFeedbackService _audio = AudioFeedbackService.instance;
 
@@ -72,24 +82,29 @@ class VoiceControlManager {
       _audio.speak('Offline mode. Using basic commands.');
     };
 
-    // Set up speech recognition callbacks
-    _speech.onResult = _onSpeechResult;
-    _speech.onError = _onSpeechError;
-    _speech.onListeningChanged = (listening) {
+    // Set up speech recognition stream subscriptions
+    _speech.onResult.listen(_onSpeechResult);
+    _speech.onError.listen(_onSpeechError);
+    _speech.onListeningChanged.listen((listening) {
       if (!listening && _state == VoiceControlState.listening) {
         // Speech recognition stopped on its own
         _setState(VoiceControlState.processing);
       }
-    };
+    });
 
     // Mark as initialized (audio + callbacks ready)
     _isInitialized = true;
 
-    // DISABLED: speech_to_text native init still crashes on iOS 26 even with Flutter 3.41.4
-    // The crash occurs in iOS speech recognition framework during background thread init
-    debugPrint('VoiceControl: initialized (speech recognition disabled for iOS 26)');
-    _speechAvailable = false;
-    return false;
+    // Initialize platform-specific speech recognition
+    _speechAvailable = await _speech.initialize();
+    
+    if (_speechAvailable) {
+      debugPrint('VoiceControl: speech recognition initialized successfully');
+    } else {
+      debugPrint('VoiceControl: speech recognition not available on this platform');
+    }
+    
+    return _speechAvailable;
   }
 
   // ── Control Methods ────────────────────────────────────────────────
@@ -117,17 +132,7 @@ class VoiceControlManager {
 
     await _audio.playFeedback(FeedbackType.listeningStart);
 
-    final started = await _speech.startListening(
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 2),
-    );
-
-    if (!started) {
-      _setState(VoiceControlState.idle);
-      await _audio.playFeedback(FeedbackType.error);
-      await _audio.speak('Could not start listening. Please try again.');
-      onError?.call('Failed to start speech recognition');
-    }
+    await _speech.startListening();
   }
 
   /// Stop listening and process the command (call on release)
@@ -166,13 +171,13 @@ class VoiceControlManager {
     }
   }
 
-  void _onSpeechResult(SpeechResult result) {
-    _lastTranscript = result.text;
-    debugPrint('VoiceControl: transcript — "${result.text}" (final: ${result.isFinal})');
+  void _onSpeechResult(String result) {
+    _lastTranscript = result;
+    debugPrint('VoiceControl: transcript — "$result"');
 
-    // If this is a final result, process immediately
-    if (result.isFinal && result.text.isNotEmpty) {
-      _processTranscript(result.text);
+    // Process the result (all results from interface are final)
+    if (result.isNotEmpty) {
+      _processTranscript(result);
     }
   }
 
